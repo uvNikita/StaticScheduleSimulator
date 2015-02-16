@@ -18,7 +18,11 @@ function draw(context, t) {
             r = t * r;
         }
         context.arc(node.x, node.y, r, 0, angle, true);
+        context.lineWidth = 3;
         context.stroke();
+
+        context.fillStyle = "white";
+        context.fill();
     }
 }
 
