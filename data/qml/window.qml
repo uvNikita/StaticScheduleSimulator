@@ -1,5 +1,3 @@
-import QtQuick 2.0
-import QtWebKit 3.0
 import QtQuick.Controls 1.2
 import QtQuick.Layouts 1.0
 
@@ -15,38 +13,11 @@ ApplicationWindow {
         Layout.minimumHeight: 400
         Tab {
             title: "Task graph"
-
-            Rectangle {
-                anchors.fill: parent
-                property var nodes: []
-
-                Canvas {
-                    id: canvas
-                    anchors.fill: parent
-                    onPaint: {
-                        var context = getContext("2d");
-
-                        context.beginPath();
-                        context.clearRect(0, 0, width, height);
-                        context.fill();
-
-                        for (var i = 0; i < parent.nodes.length; i++) {
-                            var node = parent.nodes[i]
-                            context.beginPath();
-                            context.arc(node.x, node.y, 10, 0, 2*Math.PI, true)
-                            context.stroke();
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        parent.nodes.push({x: mouseX, y: mouseY});
-                        canvas.requestPaint();
-                    }
-                }
-            }
+            Graph { }
+        }
+        Tab {
+            title: "System graph"
+            Graph { }
         }
     }
 
