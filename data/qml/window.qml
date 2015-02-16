@@ -8,36 +8,44 @@ ApplicationWindow {
     visible: true
     title: "Static Scheduler Simulator"
 
-    Rectangle {
+    TabView {
+        id: tabView
         anchors.fill: parent
         Layout.minimumWidth: 400
         Layout.minimumHeight: 400
-        property var nodes: []
+        Tab {
+            title: "Task graph"
 
-        Canvas {
-            id: canvas
-            anchors.fill: parent
-            onPaint: {
-                var context = getContext("2d");
+            Rectangle {
+                anchors.fill: parent
+                property var nodes: []
 
-                context.beginPath();
-                context.clearRect(0, 0, width, height);
-                context.fill();
+                Canvas {
+                    id: canvas
+                    anchors.fill: parent
+                    onPaint: {
+                        var context = getContext("2d");
 
-                for (var i = 0; i < parent.nodes.length; i++) {
-                    var node = parent.nodes[i]
-                    context.beginPath();
-                    context.arc(node.x, node.y, 10, 0, 2*Math.PI, true)
-                    context.stroke();
+                        context.beginPath();
+                        context.clearRect(0, 0, width, height);
+                        context.fill();
+
+                        for (var i = 0; i < parent.nodes.length; i++) {
+                            var node = parent.nodes[i]
+                            context.beginPath();
+                            context.arc(node.x, node.y, 10, 0, 2*Math.PI, true)
+                            context.stroke();
+                        }
+                    }
                 }
-            }
-        }
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                parent.nodes.push({x: mouseX, y: mouseY});
-                canvas.requestPaint();
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        parent.nodes.push({x: mouseX, y: mouseY});
+                        canvas.requestPaint();
+                    }
+                }
             }
         }
     }
