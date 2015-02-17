@@ -51,6 +51,7 @@ Rectangle {
                     if (Graph.selected !== undefined) {
                         Graph.appendEdge(Graph.selected, nodeId);
                         Graph.unselect();
+                        animateChart.start();
                     } else {
                         Graph.select(nodeId);
                     }

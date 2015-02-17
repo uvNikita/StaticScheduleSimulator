@@ -1,6 +1,7 @@
 var nodes = [];
 var edges = [];
 var selected;
+var last;
 
 var radius = 20;
 
@@ -19,7 +20,11 @@ function draw(context, t) {
         var to = nodes[edge.to]
         context.beginPath();
         context.moveTo(from.x, from.y);
-        context.lineTo(to.x, to.y);
+        if (i == edges.length - 1 && last == "edge") {
+            context.lineTo(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t) - from.y;
+        } else {
+            context.lineTo(to.x, to.y);
+        }
         context.lineWidth = 3;
         context.stroke();
     }
@@ -32,7 +37,7 @@ function draw(context, t) {
         var angle = -2 * Math.PI;
         var r = radius;
 
-        if (i == nodes.length - 1) {
+        if (i == nodes.length - 1 && last == "node") {
             r = t * r;
         }
         context.arc(node.x, node.y, r, 0, angle, true);
@@ -49,10 +54,12 @@ function draw(context, t) {
 
 function appendNode(x, y) {
     nodes.push({x: x, y: y});
+    last = "node";
 }
 
 function appendEdge(from, to) {
     edges.push({from: from, to: to});
+    last = "edge";
 }
 
 function select(id) {
