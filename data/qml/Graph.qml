@@ -51,10 +51,10 @@ Rectangle {
                     if (Graph.selected !== undefined) {
                         Graph.appendEdge(Graph.selected, nodeId);
                         Graph.unselect();
-                        canvas.requestPaint();
                     } else {
                         Graph.select(nodeId);
                     }
+                    canvas.requestPaint();
                 } else {
                     Graph.appendNode(mouseX, mouseY);
                     animateChart.start();

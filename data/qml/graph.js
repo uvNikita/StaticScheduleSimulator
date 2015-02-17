@@ -9,6 +9,9 @@ function draw(context, t) {
     context.clearRect(0, 0, width, height);
     context.fill();
 
+    context.strokeStyle = "black";
+    context.fillStyle = "white";
+
     // draw edges
     for (var i = 0; i < edges.length; i++) {
         var edge = edges[i];
@@ -34,9 +37,12 @@ function draw(context, t) {
         }
         context.arc(node.x, node.y, r, 0, angle, true);
         context.lineWidth = 3;
+        if (i == selected) {
+            context.strokeStyle = "blue";
+        } else {
+            context.strokeStyle = "black";
+        }
         context.stroke();
-
-        context.fillStyle = "white";
         context.fill();
     }
 }
