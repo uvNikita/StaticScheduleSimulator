@@ -1,4 +1,6 @@
 var nodes = [];
+var edges = [];
+var selected;
 
 var radius = 20;
 
@@ -7,6 +9,19 @@ function draw(context, t) {
     context.clearRect(0, 0, width, height);
     context.fill();
 
+    // draw edges
+    for (var i = 0; i < edges.length; i++) {
+        var edge = edges[i];
+        var from = nodes[edge.from]
+        var to = nodes[edge.to]
+        context.beginPath();
+        context.moveTo(from.x, from.y);
+        context.lineTo(to.x, to.y);
+        context.lineWidth = 3;
+        context.stroke();
+    }
+
+    // draw nodes
     for (var i = 0; i < nodes.length; i++) {
         var node = nodes[i]
         context.beginPath();
@@ -26,8 +41,20 @@ function draw(context, t) {
     }
 }
 
-function append(x, y) {
+function appendNode(x, y) {
     nodes.push({x: x, y: y});
+}
+
+function appendEdge(from, to) {
+    edges.push({from: from, to: to});
+}
+
+function select(id) {
+    selected = id;
+}
+
+function unselect() {
+    selected = undefined;
 }
 
 function nodeOnPosition(x, y) {

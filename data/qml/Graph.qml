@@ -22,36 +22,46 @@ Rectangle {
 
     MouseArea {
         property bool dragging: false;
-        property int dragId;
+        property int dragId: -1;
         property double dragHoldX;
         property double dragHoldY;
 
         anchors.fill: parent
-        onClicked: {
-            if (Graph.nodeOnPosition(mouseX, mouseY) === undefined) {
-                Graph.append(mouseX, mouseY);
-                animateChart.start();
-            }
-        }
         onPressed: {
             var nodeId = Graph.nodeOnPosition(mouseX, mouseY);
             if (nodeId !== undefined) {
                 dragId = nodeId;
-                dragging = true;
                 var node = Graph.nodes[dragId];
                 dragHoldX = mouseX - node.x;
                 dragHoldY = mouseY - node.y;
             }
         }
         onPositionChanged: {
-            if (dragging) {
+            if (dragId != -1) {
+                dragging = true;
                 Graph.nodes[dragId].x = mouseX - dragHoldX;
                 Graph.nodes[dragId].y = mouseY - dragHoldY;
                 canvas.requestPaint();
             }
         }
         onReleased: {
+            if (!dragging) {
+                var nodeId = Graph.nodeOnPosition(mouseX, mouseY);
+                if (nodeId !== undefined) {
+                    if (Graph.selected !== undefined) {
+                        Graph.appendEdge(Graph.selected, nodeId);
+                        Graph.unselect();
+                        canvas.requestPaint();
+                    } else {
+                        Graph.select(nodeId);
+                    }
+                } else {
+                    Graph.appendNode(mouseX, mouseY);
+                    animateChart.start();
+                }
+            }
             dragging = false;
+            dragId = -1;
         }
     }
 
