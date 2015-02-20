@@ -9,7 +9,7 @@ StatusBar {
     states: [
         State {
             name: "DEFAULT"
-            PropertyChanges { target: label; color: "black" }
+            PropertyChanges { target: label; color: "black"; text: "Done"}
         },
         State {
             name: "ERROR"

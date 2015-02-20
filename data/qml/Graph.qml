@@ -52,12 +52,18 @@ Rectangle {
                 var nodeId = Graph.nodeOnPosition(mouseX, mouseY);
                 if (nodeId !== undefined) {
                     if (Graph.selected !== undefined) {
-                        Graph.appendEdge(Graph.selected, nodeId);
-                        Graph.unselect();
-                        animateChart.start();
+                        if (nodeId == Graph.selected) {
+                            Graph.unselect();
+                            statusbar.state = "DEFAULT";
+                            canvas.requestPaint();
+                        } else {
+                            Graph.appendEdge(Graph.selected, nodeId);
+                            Graph.unselect();
+                            animateChart.start();
 
-                        statusbar.text = "Done";
-                        statusbar.pulseOk();
+                            statusbar.text = "Done";
+                            statusbar.pulseOk();
+                        }
                     } else {
                         Graph.select(nodeId);
                         statusbar.text = "Now select second node...";
