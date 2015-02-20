@@ -52,8 +52,12 @@ Rectangle {
                         Graph.appendEdge(Graph.selected, nodeId);
                         Graph.unselect();
                         animateChart.start();
+
+                        statusbar.text = "Done"
+                        statusbar.pulseOk()
                     } else {
                         Graph.select(nodeId);
+                        statusbar.text = "Now select second node..."
                     }
                     canvas.requestPaint();
                 } else {

@@ -6,7 +6,7 @@ import Graphics.QML(runEngineLoop, defaultEngineConfig, fileDocument, initialDoc
 import Paths_StaticScheduleSimulator (getDataFileName)
 
 main = do
-    qml <- getDataFileName "qml/window.qml"
+    qml <- getDataFileName "qml/Window.qml"
     runEngineLoop defaultEngineConfig {
         initialDocument = fileDocument qml
     }
