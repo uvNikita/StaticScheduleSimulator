@@ -6,13 +6,16 @@ import "graph.js" as Graph
 Rectangle {
     anchors.fill: parent
 
+    property bool directed: false;
+
     Canvas {
         id: canvas
         anchors.fill: parent
         property double animationProgress: 0.0
 
         onPaint: {
-            Graph.draw(canvas.getContext("2d"), animationProgress);
+            Graph.init(canvas.getContext("2d"), directed);
+            Graph.draw(animationProgress);
         }
 
         onAnimationProgressChanged: {
@@ -53,11 +56,11 @@ Rectangle {
                         Graph.unselect();
                         animateChart.start();
 
-                        statusbar.text = "Done"
-                        statusbar.pulseOk()
+                        statusbar.text = "Done";
+                        statusbar.pulseOk();
                     } else {
                         Graph.select(nodeId);
-                        statusbar.text = "Now select second node..."
+                        statusbar.text = "Now select second node...";
                     }
                     canvas.requestPaint();
                 } else {
