@@ -9,14 +9,16 @@ ApplicationWindow {
     TabView {
         id: tabView
         anchors.fill: parent
-        Layout.minimumWidth: 400
+        Layout.minimumWidth: 600
         Layout.minimumHeight: 400
+        Layout.preferredWidth: 1000
+        Layout.preferredHeight: 700
         Tab {
-            title: "Task graph"
+            title: "Task"
             Graph { }
         }
         Tab {
-            title: "System graph"
+            title: "System"
             Graph { }
         }
     }

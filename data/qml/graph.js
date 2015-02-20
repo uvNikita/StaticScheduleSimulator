@@ -3,7 +3,7 @@ var edges = [];
 var selected;
 var last;
 
-var radius = 20;
+var radius = 30;
 
 function draw(context, t) {
     context.beginPath();
@@ -41,7 +41,7 @@ function draw(context, t) {
             r = t * r;
         }
         context.arc(node.x, node.y, r, 0, angle, true);
-        context.lineWidth = 3;
+        context.lineWidth = 5;
         if (i == selected) {
             context.strokeStyle = "blue";
         } else {
