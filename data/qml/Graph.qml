@@ -1,11 +1,11 @@
 import QtQuick 2.0
 import QtWebKit 3.0
 import QtQuick.Layouts 1.0
+import Ubuntu.Components 1.1
+
 import "graph.js" as Graph
 
-Rectangle {
-    anchors.fill: parent
-
+Page {
     property bool directed: false;
 
     Canvas {
@@ -54,19 +54,19 @@ Rectangle {
                     if (Graph.selected !== undefined) {
                         if (nodeId == Graph.selected) {
                             Graph.unselect();
-                            statusbar.state = "DEFAULT";
+                            //statusbar.state = "DEFAULT";
                             canvas.requestPaint();
                         } else {
                             Graph.appendEdge(Graph.selected, nodeId);
                             Graph.unselect();
                             animateChart.start();
 
-                            statusbar.text = "Done";
-                            statusbar.pulseOk();
+                            //statusbar.text = "Done";
+                            //statusbar.pulseOk();
                         }
                     } else {
                         Graph.select(nodeId);
-                        statusbar.text = "Now select second node...";
+                        //statusbar.text = "Now select second node...";
                     }
                     canvas.requestPaint();
                 } else {

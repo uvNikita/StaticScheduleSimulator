@@ -1,29 +1,31 @@
 import QtQuick 2.0
-import QtQuick.Controls 1.2
-import QtQuick.Layouts 1.0
+import Ubuntu.Components 1.1
 
-ApplicationWindow {
-    id: window
-    visible: true
-    title: "Static Scheduler Simulator"
-
-    TabView {
-        id: tabView
-        anchors.fill: parent
-        Layout.minimumWidth: 600
-        Layout.minimumHeight: 400
-        Layout.preferredWidth: 1000
-        Layout.preferredHeight: 700
-        Tab {
-            title: "Task"
-            Graph { directed: true }
-        }
-        Tab {
-            title: "System"
-            Graph { directed: false }
+MainView {
+    useDeprecatedToolbar: false
+    width: units.gu(128)
+    height: units.gu(80)
+    Keys.onPressed: {
+        if(event.modifiers && Qt.ControlModifier) {
+            switch(event.key) {
+                case Qt.Key_Tab:
+                    var cid = tabView.selectedTabIndex;
+                    tabView.selectedTabIndex = cid === tabView.count - 1 ? 0 : cid + 1;
+                    event.accepted = true;
+                    break;
+            }
         }
     }
 
-    statusBar: AppStatusBar { id: statusbar }
-
+    Tabs {
+        id: tabView
+        Tab {
+            title: "Task"
+            page: Graph { anchors.fill: parent; directed: true }
+        }
+        Tab {
+            title: "System"
+            page: Graph { anchors.fill: parent; directed: false }
+        }
+    }
 }

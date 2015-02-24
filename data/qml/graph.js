@@ -80,7 +80,7 @@ function draw(t) {
             r = t * r;
         }
         context.arc(node.x, node.y, r, 0, angle, true);
-        context.lineWidth = 5;
+        context.lineWidth = 6;
         if (i == selected) {
             context.strokeStyle = "blue";
         } else {
