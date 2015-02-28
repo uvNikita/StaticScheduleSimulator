@@ -1,5 +1,5 @@
-var nodes = [];
-var edges = [];
+var nodes = {};
+var edges = {};
 var selected;
 var last;
 
@@ -7,6 +7,8 @@ var directed;
 var context;
 
 var radius = 30;
+
+var _cid = 0;
 
 function init(context_, directed_) {
     directed = directed_;
@@ -39,7 +41,7 @@ function draw(t) {
     // draw edges
     context.beginPath();
     context.lineWidth = 3;
-    for (var i = 0; i < edges.length; i++) {
+    for (var i in edges) {
         var edge = edges[i];
         var from = nodes[edge.from];
         var to = nodes[edge.to];
@@ -56,7 +58,7 @@ function draw(t) {
         var fy = from.y;
         var tx = to.x - dx2;
         var ty = to.y - dy2;
-        if (i == edges.length - 1 && last == "edge") {
+        if (i == last) {
             tx = fx + (tx - fx) * t;
             ty = fy + (ty - fy) * t;
         }
@@ -69,14 +71,14 @@ function draw(t) {
     context.stroke();
 
     // draw nodes
-    for (var i = 0; i < nodes.length; i++) {
+    for (var i in nodes) {
         var node = nodes[i];
         context.beginPath();
 
         var angle = -2 * Math.PI;
         var r = radius;
 
-        if (i == nodes.length - 1 && last == "node") {
+        if (i == last) {
             r = t * r;
         }
         context.arc(node.x, node.y, r, 0, angle, true);
@@ -91,14 +93,22 @@ function draw(t) {
     }
 }
 
-function appendNode(x, y) {
-    nodes.push({x: x, y: y});
-    last = "node";
+function appendNode(x, y, weight) {
+    var idx = _cid;
+    nodes[idx] = {idx: idx, x: x, y: y, weight: weight};
+    last = idx;
+    _cid += 1;
 }
 
 function appendEdge(from, to) {
-    edges.push({from: from, to: to});
-    last = "edge";
+    var idx = _cid;
+    edges[idx] = {idx: idx, from: from, to: to};
+    last = idx;
+    _cid += 1;
+}
+
+function setWeight(id, weight) {
+    nodes[id].weight = weight;
 }
 
 function select(id) {
@@ -110,7 +120,7 @@ function unselect() {
 }
 
 function nodeOnPosition(x, y) {
-    for (var i = 0; i < nodes.length; i++) {
+    for (var i in nodes) {
         var node = nodes[i];
         if (hitTest(nodes[i], x, y)) {
             return i;

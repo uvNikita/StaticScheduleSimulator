@@ -2,11 +2,56 @@ import QtQuick 2.0
 import QtWebKit 3.0
 import QtQuick.Layouts 1.0
 import Ubuntu.Components 1.1
+import Ubuntu.Components.Popups 0.1
 
 import "graph.js" as Graph
 
 Page {
     property bool directed: false;
+
+    Keys.onPressed: {
+        switch(event.key) {
+            case Qt.Key_Return:
+                if (Graph.selected !== undefined) {
+                    var dialog = PopupUtils.open(nodeDialogComponent);
+                    dialog.focus();
+                }
+                break;
+        }
+    }
+
+    Component {
+        id: nodeDialogComponent
+        Dialog {
+            id: nodeDialog
+            title: "Weight"
+            text: "Enter weight of the node"
+
+            TextField {
+                id: nodeWeight
+                placeholderText: "1"
+                validator: IntValidator{ bottom: 1; top: 99; }
+                onAccepted: {
+                    var nodeId = Graph.selected;
+                    var weight = parseInt(text);
+                    Graph.setWeight(nodeId, weight);
+                    Graph.unselect();
+                    PopupUtils.close(nodeDialog);
+                }
+            }
+
+            function focus() {
+                nodeWeight.forceActiveFocus();
+            }
+            Button {
+                text: "Cancel"
+                onClicked: {
+                    PopupUtils.close(nodeDialog)
+                    Graph.unselect();
+                }
+            }
+        }
+    }
 
     Canvas {
         id: canvas
@@ -70,7 +115,7 @@ Page {
                     }
                     canvas.requestPaint();
                 } else {
-                    Graph.appendNode(mouseX, mouseY);
+                    Graph.appendNode(mouseX, mouseY, 1);
                     animateChart.start();
                 }
             }
@@ -79,12 +124,12 @@ Page {
         }
     }
 
-    NumberAnimation {
+    UbuntuNumberAnimation {
         id: animateChart
         target: canvas
         properties: "animationProgress"
         from: 0.0
         to: 1.0
-        duration: 100
+        duration: UbuntuAnimation.SnapDuration
     }
 }

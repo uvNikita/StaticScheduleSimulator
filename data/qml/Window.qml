@@ -5,6 +5,7 @@ MainView {
     useDeprecatedToolbar: false
     width: units.gu(128)
     height: units.gu(80)
+
     Keys.onPressed: {
         if(event.modifiers && Qt.ControlModifier) {
             switch(event.key) {
@@ -21,11 +22,11 @@ MainView {
         id: tabView
         Tab {
             title: "Task"
-            page: Graph { anchors.fill: parent; directed: true }
+            page: Graph { directed: true }
         }
         Tab {
             title: "System"
-            page: Graph { anchors.fill: parent; directed: false }
+            page: Graph { directed: false }
         }
     }
 }
