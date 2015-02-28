@@ -30,15 +30,7 @@ function draw_line(fromx, fromy, tox, toy) {
     context.lineTo(tox, toy);
 }
 
-function draw(t) {
-    context.beginPath();
-    context.clearRect(0, 0, width, height);
-    context.fill();
-
-    context.strokeStyle = "black";
-    context.fillStyle = "white";
-
-    // draw edges
+function draw_edges(t) {
     context.beginPath();
     context.lineWidth = 3;
     for (var i in edges) {
@@ -69,8 +61,9 @@ function draw(t) {
         }
     }
     context.stroke();
+}
 
-    // draw nodes
+function draw_nodes(t) {
     for (var i in nodes) {
         var node = nodes[i];
         context.beginPath();
@@ -91,6 +84,18 @@ function draw(t) {
         context.stroke();
         context.fill();
     }
+}
+
+function draw(t) {
+    context.beginPath();
+    context.clearRect(0, 0, width, height);
+    context.fill();
+
+    context.strokeStyle = "black";
+    context.fillStyle = "white";
+
+    draw_edges(t);
+    draw_nodes(t);
 }
 
 function appendNode(x, y, weight) {
