@@ -65,7 +65,6 @@ function draw_edges(t) {
 }
 
 function draw_nodes(t) {
-    context.font="22px Ubuntu";
     for (var i in nodes) {
         var node = nodes[i];
         context.fillStyle = "white";
@@ -87,10 +86,19 @@ function draw_nodes(t) {
         context.stroke();
         context.fill();
 
+        // node weight
         context.fillStyle = "black";
+        context.font="22px Ubuntu";
         context.textBaseline = "middle";
         var text_width = context.measureText(node.weight).width;
         context.fillText(node.weight, node.x - (text_width / 2), node.y);
+
+        // node id
+        context.fillStyle = "black";
+        context.font="18px Ubuntu";
+        context.textBaseline = "top";
+        var text_width = context.measureText(node.weight).width;
+        context.fillText(node.idx, node.x + radius, node.y - radius);
     }
 }
 
