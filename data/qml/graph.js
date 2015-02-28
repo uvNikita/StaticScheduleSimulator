@@ -32,6 +32,7 @@ function draw_line(fromx, fromy, tox, toy) {
 
 function draw_edges(t) {
     context.beginPath();
+    context.strokeStyle = "black";
     context.lineWidth = 3;
     for (var i in edges) {
         var edge = edges[i];
@@ -64,8 +65,10 @@ function draw_edges(t) {
 }
 
 function draw_nodes(t) {
+    context.font="22px Ubuntu";
     for (var i in nodes) {
         var node = nodes[i];
+        context.fillStyle = "white";
         context.beginPath();
 
         var angle = -2 * Math.PI;
@@ -83,6 +86,11 @@ function draw_nodes(t) {
         }
         context.stroke();
         context.fill();
+
+        context.fillStyle = "black";
+        context.textBaseline = "middle";
+        var text_width = context.measureText(node.weight).width;
+        context.fillText(node.weight, node.x - (text_width / 2), node.y);
     }
 }
 
@@ -90,9 +98,6 @@ function draw(t) {
     context.beginPath();
     context.clearRect(0, 0, width, height);
     context.fill();
-
-    context.strokeStyle = "black";
-    context.fillStyle = "white";
 
     draw_edges(t);
     draw_nodes(t);

@@ -37,6 +37,7 @@ Page {
                     Graph.setWeight(nodeId, weight);
                     Graph.unselect();
                     PopupUtils.close(nodeDialog);
+                    canvas.requestPaint();
                 }
             }
 
