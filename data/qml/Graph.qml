@@ -30,7 +30,7 @@ Page {
             TextField {
                 id: nodeWeight
                 placeholderText: "1"
-                validator: IntValidator{ bottom: 1; top: 99; }
+                validator: IntValidator { bottom: 1; top: 99; }
                 onAccepted: {
                     var nodeId = Graph.selected;
                     var weight = parseInt(text);
@@ -49,6 +49,7 @@ Page {
                 onClicked: {
                     PopupUtils.close(nodeDialog)
                     Graph.unselect();
+                    canvas.requestPaint();
                 }
             }
         }
