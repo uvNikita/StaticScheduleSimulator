@@ -104,7 +104,7 @@ Page {
                             //statusbar.state = "DEFAULT";
                             canvas.requestPaint();
                         } else {
-                            Graph.appendEdge(Graph.selected, nodeId);
+                            Graph.appendEdge(Graph.selected, nodeId, 1);
                             Graph.unselect();
                             animateChart.start();
 

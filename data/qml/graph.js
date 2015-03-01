@@ -61,6 +61,20 @@ function draw_edges(t) {
         } else {
             draw_line(fx, fy, tx, ty);
         }
+
+        // weight
+        context.fillStyle = "black";
+        context.font="20px Ubuntu";
+        context.textBaseline = "middle";
+        var mx = (fx + tx) / 2;
+        var my = (fy + ty) / 2;
+        var a = my - from.y;
+        var b = mx - from.x;
+        var c = d / 2;
+        var h = 15;
+        var dxm = a * h / c;
+        var dym = b * h / c;
+        context.fillText(edge.weight, mx + dxm, my - dym);
     }
     context.stroke();
 }
@@ -119,9 +133,9 @@ function appendNode(x, y, weight) {
     _cnid += 1;
 }
 
-function appendEdge(from, to) {
+function appendEdge(from, to, weight) {
     var idx = "e" + _ceid;
-    edges[idx] = {idx: idx, from: from, to: to};
+    edges[idx] = {idx: idx, from: from, to: to, weight: weight};
     last = idx;
     _ceid += 1;
 }
@@ -141,13 +155,13 @@ function unselect() {
 function nodeOnPosition(x, y) {
     for (var i in nodes) {
         var node = nodes[i];
-        if (hitTest(nodes[i], x, y)) {
+        if (hitNodeTest(node, x, y)) {
             return i;
         }
     }
 }
 
-function hitTest(node, x, y) {
+function hitNodeTest(node, x, y) {
     var dx = x - node.x;
     var dy = y - node.y;
     return (dx * dx + dy * dy < radius * radius);
