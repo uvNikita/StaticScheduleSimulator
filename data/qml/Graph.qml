@@ -17,6 +17,13 @@ Page {
                     dialog.focus();
                 }
                 break;
+            case Qt.Key_Delete:
+                if (Graph.selected !== undefined) {
+                    Graph.deleteNode(Graph.selected);
+                    Graph.unselect();
+                    canvas.requestPaint();
+                }
+                break;
         }
     }
 

@@ -144,8 +144,8 @@ function setWeight(id, weight) {
     nodes[id].weight = weight;
 }
 
-function select(id) {
-    selected = id;
+function select(idx) {
+    selected = idx;
 }
 
 function unselect() {
@@ -158,6 +158,25 @@ function nodeOnPosition(x, y) {
         if (hitNodeTest(node, x, y)) {
             return i;
         }
+    }
+}
+
+function deleteNode(idx) {
+    console.log(idx);
+    for (var nid in nodes) {
+        console.log(nid);
+    }
+    delete nodes[idx];
+    var edges_to_delete = [];
+    for (var eid in edges) {
+        var edge = edges[eid];
+        if (edge.from === idx || edge.to === idx) {
+            console.log("del edge" + eid);
+            edges_to_delete.push(eid);
+        }
+    }
+    for (var i = 0; i < edges_to_delete.length; i++) {
+        delete edges[edges_to_delete[i]];
     }
 }
 
