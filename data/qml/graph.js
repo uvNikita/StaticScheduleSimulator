@@ -162,10 +162,6 @@ function nodeOnPosition(x, y) {
 }
 
 function deleteNode(idx) {
-    console.log(idx);
-    for (var nid in nodes) {
-        console.log(nid);
-    }
     delete nodes[idx];
     var edges_to_delete = [];
     for (var eid in edges) {
