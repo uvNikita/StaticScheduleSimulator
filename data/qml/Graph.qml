@@ -12,15 +12,22 @@ Page {
     Keys.onPressed: {
         switch(event.key) {
             case Qt.Key_Return:
-                if (Graph.selected !== undefined) {
+                if (Graph.selectedNode !== undefined) {
                     var dialog = PopupUtils.open(nodeDialogComponent);
+                    dialog.focus();
+                } else if (Graph.selectedEdge !== undefined) {
+                    var dialog = PopupUtils.open(edgeDialogComponent);
                     dialog.focus();
                 }
                 break;
             case Qt.Key_Delete:
-                if (Graph.selected !== undefined) {
-                    Graph.deleteNode(Graph.selected);
-                    Graph.unselect();
+                if (Graph.selectedNode !== undefined) {
+                    Graph.deleteNode(Graph.selectedNode);
+                    Graph.unselectNode();
+                    canvas.requestPaint();
+                } else if (Graph.selectedEdge !== undefined) {
+                    Graph.deleteEdge(Graph.selectedEdge);
+                    Graph.unselectEdge();
                     canvas.requestPaint();
                 }
                 break;
@@ -39,10 +46,10 @@ Page {
                 placeholderText: "1"
                 validator: IntValidator { bottom: 1; top: 99; }
                 onAccepted: {
-                    var nodeId = Graph.selected;
+                    var nodeId = Graph.selectedNode;
                     var weight = parseInt(text);
-                    Graph.setWeight(nodeId, weight);
-                    Graph.unselect();
+                    Graph.setNodeWeight(nodeId, weight);
+                    Graph.unselectNode();
                     PopupUtils.close(nodeDialog);
                     canvas.requestPaint();
                 }
@@ -55,7 +62,42 @@ Page {
                 text: "Cancel"
                 onClicked: {
                     PopupUtils.close(nodeDialog)
-                    Graph.unselect();
+                    Graph.unselectNode();
+                    canvas.requestPaint();
+                }
+            }
+        }
+    }
+
+    Component {
+        id: edgeDialogComponent
+        Dialog {
+            id: edgeDialog
+            title: "Weight"
+            text: "Enter weight of the edge"
+
+            TextField {
+                id: edgeWeight
+                placeholderText: "1"
+                validator: IntValidator { bottom: 1; top: 99; }
+                onAccepted: {
+                    var edgeId = Graph.selectedEdge;
+                    var weight = parseInt(text);
+                    Graph.setEdgeWeight(edgeId, weight);
+                    Graph.unselectEdge();
+                    PopupUtils.close(edgeDialog);
+                    canvas.requestPaint();
+                }
+            }
+
+            function focus() {
+                edgeWeight.forceActiveFocus();
+            }
+            Button {
+                text: "Cancel"
+                onClicked: {
+                    PopupUtils.close(edgeDialog)
+                    Graph.unselectEdge();
                     canvas.requestPaint();
                 }
             }
@@ -104,29 +146,33 @@ Page {
         onReleased: {
             if (!dragging) {
                 var nodeId = Graph.nodeOnPosition(mouseX, mouseY);
+                var edgeId = Graph.edgeOnPosition(mouseX, mouseY);
                 if (nodeId !== undefined) {
-                    if (Graph.selected !== undefined) {
-                        if (nodeId == Graph.selected) {
-                            Graph.unselect();
-                            //statusbar.state = "DEFAULT";
+                    if (Graph.selectedNode !== undefined) {
+                        if (nodeId == Graph.selectedNode) {
+                            Graph.unselectNode();
                             canvas.requestPaint();
                         } else {
-                            Graph.appendEdge(Graph.selected, nodeId, 1);
-                            Graph.unselect();
+                            Graph.appendEdge(Graph.selectedNode, nodeId, 1);
+                            Graph.unselectNode();
                             animateChart.start();
-
-                            //statusbar.text = "Done";
-                            //statusbar.pulseOk();
                         }
                     } else {
-                        Graph.select(nodeId);
-                        //statusbar.text = "Now select second node...";
+                        Graph.selectNode(nodeId);
                     }
-                    canvas.requestPaint();
+                } else if (edgeId !== undefined) {
+                    if (edgeId == Graph.selectedEdge) {
+                        Graph.unselectEdge();
+                        canvas.requestPaint();
+                    } else {
+                        Graph.selectEdge(edgeId);
+                    }
                 } else {
                     Graph.appendNode(mouseX, mouseY, 1);
+                    Graph.unselectEdge();
                     animateChart.start();
                 }
+                canvas.requestPaint();
             }
             dragging = false;
             dragId = "";

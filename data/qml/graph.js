@@ -1,6 +1,7 @@
 var nodes = {};
 var edges = {};
-var selected;
+var selectedNode;
+var selectedEdge;
 var last;
 
 var directed;
@@ -32,10 +33,10 @@ function draw_line(fromx, fromy, tox, toy) {
 }
 
 function draw_edges(t) {
-    context.beginPath();
     context.strokeStyle = "black";
     context.lineWidth = 3;
     for (var i in edges) {
+        context.beginPath();
         var edge = edges[i];
         var from = nodes[edge.from];
         var to = nodes[edge.to];
@@ -56,11 +57,19 @@ function draw_edges(t) {
             tx = fx + (tx - fx) * t;
             ty = fy + (ty - fy) * t;
         }
+
+        if (i == selectedEdge) {
+            context.strokeStyle = "blue";
+        } else {
+            context.strokeStyle = "black";
+        }
+
         if (directed) {
             draw_arrow(fx, fy, tx, ty);
         } else {
             draw_line(fx, fy, tx, ty);
         }
+        context.stroke();
 
         // weight
         context.fillStyle = "black";
@@ -74,9 +83,13 @@ function draw_edges(t) {
         var h = 15;
         var dxm = a * h / c;
         var dym = b * h / c;
+        if (dxm < 0) {
+            dxm = -dxm;
+            dym = -dym;
+        }
         context.fillText(edge.weight, mx + dxm, my - dym);
+        context.stroke();
     }
-    context.stroke();
 }
 
 function draw_nodes(t) {
@@ -93,7 +106,7 @@ function draw_nodes(t) {
         }
         context.arc(node.x, node.y, r, 0, angle, true);
         context.lineWidth = 6;
-        if (i == selected) {
+        if (i == selectedNode) {
             context.strokeStyle = "blue";
         } else {
             context.strokeStyle = "black";
@@ -140,16 +153,30 @@ function appendEdge(from, to, weight) {
     _ceid += 1;
 }
 
-function setWeight(id, weight) {
+function setNodeWeight(id, weight) {
     nodes[id].weight = weight;
 }
 
-function select(idx) {
-    selected = idx;
+function setEdgeWeight(id, weight) {
+    edges[id].weight = weight;
 }
 
-function unselect() {
-    selected = undefined;
+function selectNode(idx) {
+    selectedNode = idx;
+    selectedEdge = undefined;
+}
+
+function unselectNode() {
+    selectedNode = undefined;
+}
+
+function selectEdge(idx) {
+    selectedEdge = idx;
+    selectedNode = undefined;
+}
+
+function unselectEdge() {
+    selectedEdge = undefined;
 }
 
 function nodeOnPosition(x, y) {
@@ -167,13 +194,37 @@ function deleteNode(idx) {
     for (var eid in edges) {
         var edge = edges[eid];
         if (edge.from === idx || edge.to === idx) {
-            console.log("del edge" + eid);
             edges_to_delete.push(eid);
         }
     }
     for (var i = 0; i < edges_to_delete.length; i++) {
         delete edges[edges_to_delete[i]];
     }
+}
+
+function deleteEdge(idx) {
+    delete edges[idx];
+}
+
+function edgeOnPosition(x, y) {
+    for (var i in edges) {
+        var edge = edges[i];
+        if (hitEdgeTest(edge, x, y)) {
+            return i;
+        }
+    }
+}
+
+function hitEdgeTest(edge, x, y) {
+    var select_radius = 30;
+    var from = nodes[edge.from];
+    var to = nodes[edge.to];
+    var mx = (from.x + to.x) / 2;
+    var my = (from.y + to.y) / 2;
+
+    var dx = x - mx;
+    var dy = y - my;
+    return (dx * dx + dy * dy < select_radius * select_radius);
 }
 
 function hitNodeTest(node, x, y) {
