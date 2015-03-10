@@ -214,7 +214,7 @@ function deleteNode(idx) {
     var edges_to_delete = [];
     for (var eid in edges) {
         var edge = edges[eid];
-        if (edge.from === idx || edge.to === idx) {
+        if (edge.from == idx || edge.to == idx) {
             edges_to_delete.push(eid);
         }
     }

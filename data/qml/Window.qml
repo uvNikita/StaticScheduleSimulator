@@ -22,11 +22,15 @@ MainView {
         id: tabView
         Tab {
             title: "Task"
-            page: Graph { directed: true }
+            page: Graph { id: task; directed: true }
         }
         Tab {
             title: "System"
-            page: Graph { directed: false }
+            page: Graph { id: system; directed: false }
+        }
+        Tab {
+            title: "Modeling"
+            page: Modeling { task: task; system: system}
         }
     }
 }

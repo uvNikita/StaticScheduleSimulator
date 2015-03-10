@@ -9,18 +9,7 @@ import "graph.js" as Graph
 Page {
     property bool directed: false;
 
-    tools: ToolbarItems {
-        ToolbarButton {
-            action: Action {
-                text: "validate"
-                onTriggered: {
-                    var gr = JSON.stringify(Graph.getGraph());
-                    console.log(gr);
-                    validateTask(gr);
-                }
-            }
-        }
-    }
+    function getGraph() { return Graph.getGraph() }
 
     Keys.onPressed: {
         switch(event.key) {
@@ -117,9 +106,6 @@ Page {
         }
     }
 
-    Label {
-        text: taskGraphResult
-    }
     Canvas {
         id: canvas
         anchors.fill: parent
