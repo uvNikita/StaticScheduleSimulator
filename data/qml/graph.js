@@ -17,6 +17,18 @@ function init(context_, directed_) {
     context = context_;
 }
 
+function getGraph() {
+    var nodes_ls = [];
+    var edges_ls = [];
+    for (var i in nodes) {
+        nodes_ls.push(nodes[i]);
+    }
+    for (var i in edges) {
+        edges_ls.push(edges[i]);
+    }
+    return {"nodes": nodes_ls, "edges": edges_ls};
+}
+
 function draw_arrow(fromx, fromy, tox, toy) {
       var headlen = 15;
       var angle = Math.atan2(toy-fromy,tox-fromx);
