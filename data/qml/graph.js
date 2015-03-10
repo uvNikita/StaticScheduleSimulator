@@ -9,8 +9,7 @@ var context;
 
 var radius = 30;
 
-var _cnid = 0;
-var _ceid = 0;
+var _cid = 0;
 
 function init(context_, directed_) {
     directed = directed_;
@@ -152,17 +151,27 @@ function draw(t) {
 }
 
 function appendNode(x, y, weight) {
-    var idx = "n" + _cnid;
-    nodes[idx] = {idx: idx, x: x, y: y, weight: weight};
+    var idx = _cid;
+    nodes[idx] = {
+        idx: idx,
+        x: x,
+        y: y,
+        weight: Number(weight)
+    };
     last = idx;
-    _cnid += 1;
+    _cid += 1;
 }
 
 function appendEdge(from, to, weight) {
-    var idx = "e" + _ceid;
-    edges[idx] = {idx: idx, from: from, to: to, weight: weight};
+    var idx = _cid;
+    edges[idx] = {
+        idx: idx,
+        from: Number(from),
+        to: Number(to),
+        weight: Number(weight)
+    };
     last = idx;
-    _ceid += 1;
+    _cid += 1;
 }
 
 function setNodeWeight(id, weight) {

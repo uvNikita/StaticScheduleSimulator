@@ -137,7 +137,7 @@ Page {
 
     MouseArea {
         property bool dragging: false;
-        property string dragId: "";
+        property int dragId: -1;
         property double dragHoldX;
         property double dragHoldY;
 
@@ -152,7 +152,7 @@ Page {
             }
         }
         onPositionChanged: {
-            if (dragId != "") {
+            if (dragId != -1) {
                 dragging = true;
                 Graph.nodes[dragId].x = mouseX - dragHoldX;
                 Graph.nodes[dragId].y = mouseY - dragHoldY;
@@ -191,7 +191,7 @@ Page {
                 canvas.requestPaint();
             }
             dragging = false;
-            dragId = "";
+            dragId = -1;
         }
     }
 

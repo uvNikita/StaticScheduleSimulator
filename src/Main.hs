@@ -10,7 +10,7 @@ import Graphics.QML
 import Paths_StaticScheduleSimulator (getDataFileName)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import Control.Concurrent.MVar (MVar, putMVar, swapMVar, readMVar, takeMVar, newMVar)
+import Control.Concurrent.MVar (MVar, swapMVar, readMVar, newMVar)
 import Control.Concurrent (forkIO)
 import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
@@ -45,45 +45,47 @@ instance DefaultClass ContextObj where
         , defMethod "validateSystem" validateSystem_
         ]
 
-type Task = Directed
-type System = Undirected
+type Task   = Directed   Int Int
+type System = Undirected Int Int
 
 validateTask_ :: ObjRef ContextObj -> Text -> IO ()
 validateTask_ ctx graphStr = do
     _ <- forkIO $ do
         let resultVar = taskGraphResult . fromObjRef $ ctx
-        case validateTask (T.unpack graphStr) of
+        _ <- case validateTask (T.unpack graphStr) of
             Just err -> swapMVar resultVar (T.concat ["error: ", T.pack err])
-            Nothing ->  swapMVar resultVar "ok"
+            Nothing  -> swapMVar resultVar "ok"
         fireSignal (Proxy :: Proxy TaskValidationDone) ctx
     return ()
 
 validateSystem_ :: ObjRef ContextObj -> Text -> IO ()
 validateSystem_ ctx graphStr = do
-    Prelude.putStrLn (show graphStr)
     _ <- forkIO $ do
         let resultVar = systemGraphResult . fromObjRef $ ctx
         _ <- case validateSystem (T.unpack graphStr) of
             Just err -> swapMVar resultVar (T.concat ["error: ", T.pack err])
-            Nothing ->  swapMVar resultVar "ok"
+            Nothing  -> swapMVar resultVar "ok"
         fireSignal (Proxy :: Proxy SystemValidationDone) ctx
     return ()
 
 validateTask :: String -> Maybe String
 validateTask graphStr =
     case eitherDecode (BS.pack graphStr) :: Either String Task of
-        Left err -> Just err
-        Right graph -> if isDAG graph then Nothing else Just "not acyclic"
+        Left err    -> Just err
+        Right graph -> if isDAG graph
+                           then Nothing
+                           else Just "not acyclic"
     where isDAG = null . cyclesIn'
 
 validateSystem :: String -> Maybe String
 validateSystem graphStr =
     case eitherDecode (BS.pack graphStr) :: Either String System of
-        Left err -> Just err
+        Left err    -> Just err
         Right graph -> if isConnected graph
                            then Nothing
                            else Just "not fully connected"
 
+main :: IO ()
 main = do
     tr <- newMVar "Init"
     sr <- newMVar "Init"
