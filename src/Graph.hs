@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Graph (
       Directed
@@ -11,23 +12,31 @@ module Graph (
 ) where
 
 import Data.Aeson
-import qualified Data.IGraph as G
-import Data.Hashable (Hashable)
+import qualified Data.Graph.Inductive as G
+import Data.Graph.Inductive (undir, Graph, DynGraph)
+import qualified Data.Graph.Inductive.NodeMap as NM
 import GHC.Generics (Generic)
 import Control.Monad (forM)
+import Data.Function (on)
 
 
 data Node = Node { nodeId :: String
-                 , nodeWeight :: Int } deriving (Show, Eq, Generic)
+                 , nodeWeight :: Int } deriving (Show, Generic)
+
+instance Eq Node where
+    (==) = (==) `on` nodeId
+
+instance Ord Node where
+    compare = compare `on` nodeId
 
 data EdgeJS = EdgeJS { fromNode :: String
                      , toNode :: String
                      , edgeWeight :: Int } deriving (Show)
 
-instance Hashable Node
-
-type Directed = G.Graph (G.Weighted G.D) Node
-type Undirected = G.Graph (G.Weighted G.U) Node
+newtype DirectedG a b = Directed (G.Gr a b) deriving (Show, Graph, DynGraph)
+newtype UndirectedG a b = Undirected (G.Gr a b) deriving (Show, Graph, DynGraph)
+type Directed = DirectedG Node Int
+type Undirected = UndirectedG Node Int
 
 instance FromJSON (Node) where
     parseJSON (Object v) = do
@@ -48,21 +57,21 @@ instance FromJSON (EdgeJS) where
 
 parseGraph (Object v) = do
     nodes    <- v .: "nodes"
-    let nodesMap = map (\ n -> (nodeId n, n)) nodes
     edges    <- v .: "edges"
+    let nodesMap = map (\ n -> (nodeId n, n)) nodes
     let getNode idx = maybe (fail $ "can't find node: " ++ show idx)
                             return
                             (lookup idx nodesMap)
-    ls <- forM edges $ \ EdgeJS { fromNode, toNode, edgeWeight } -> do
+    connections <- forM edges $ \ EdgeJS { fromNode, toNode, edgeWeight } -> do
         from <- getNode fromNode
         to   <- getNode toNode
         return (from, to, edgeWeight)
 
-    return $ G.fromListWeighted ls
+    return . fst $ NM.mkMapGraph nodes connections
 parseGraph _          = fail "node expected to be an object"
 
 instance FromJSON (Directed) where
     parseJSON = parseGraph
 
 instance FromJSON (Undirected) where
-    parseJSON = parseGraph
+    parseJSON o = undir `fmap` parseGraph o
