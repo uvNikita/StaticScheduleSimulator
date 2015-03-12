@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtWebKit 3.0
 import QtQuick.Layouts 1.0
+import QtQuick.Dialogs 1.0
 import Ubuntu.Components 1.1
 import Ubuntu.Components.Popups 0.1
 
@@ -8,8 +9,63 @@ import "graph.js" as Graph
 
 Page {
     property bool directed: false;
-
+    property string lG: loadedGraph;
     function getGraph() { return Graph.getGraph() }
+    function loadGraph() {
+        onLGChanged.disconnect(loadGraph);
+        Graph.loadGraph(JSON.parse(lG));
+        canvas.requestPaint();
+    }
+
+    tools: ToolbarItems {
+        ToolbarButton {
+            action: Action {
+                iconName: "view-fullscreen"
+                onTriggered: {
+                    saveDialog.open();
+                }
+            }
+        }
+        ToolbarButton {
+            action: Action {
+                iconName: "view-restore"
+                onTriggered: {
+                    loadDialog.open();
+                }
+            }
+        }
+    }
+
+    FileDialog {
+        id: saveDialog
+        title: "Please choose a file to save graph"
+        nameFilters: [ "Graph files (*.grph)", "All files (*)" ]
+        onAccepted: {
+            var path = String(fileUrl).slice(7);  // TODO implement proper path converting
+            saveGraphToFile(path, JSON.stringify(Graph.getGraph()));
+            saveDialog.close();
+        }
+        onRejected: {
+            saveDialog.close();
+        }
+    }
+
+
+    FileDialog {
+        id: loadDialog
+        title: "Please choose a graph to load"
+        nameFilters: [ "Graph files (*.grph)", "All files (*)" ]
+        selectExisting: true
+        onAccepted: {
+            var path = String(fileUrl).slice(7);  // TODO implement proper path converting
+            onLGChanged.connect(loadGraph);
+            loadGraphFromFile(path);
+            loadDialog.close();
+        }
+        onRejected: {
+            loadDialog.close();
+        }
+    }
 
     Keys.onPressed: {
         switch(event.key) {

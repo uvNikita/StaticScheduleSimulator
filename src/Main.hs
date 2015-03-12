@@ -19,21 +19,25 @@ import Data.Text (Text)
 import Data.Graph.Inductive (isConnected)
 import Data.Graph.Analysis (cyclesIn')
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 import Graph
 
 data ContextObj = ContextObj { taskGraphResult :: MVar Text
-                             , systemGraphResult :: MVar Text } deriving Typeable
+                             , systemGraphResult :: MVar Text
+                             , loadedGraph :: MVar Text } deriving Typeable
 
 data TaskValidationDone deriving Typeable
-
 instance SignalKeyClass TaskValidationDone where
     type SignalParams TaskValidationDone = IO ()
 
 data SystemValidationDone deriving Typeable
-
 instance SignalKeyClass SystemValidationDone where
     type SignalParams SystemValidationDone = IO ()
+
+data GraphLoaded deriving Typeable
+instance SignalKeyClass GraphLoaded where
+    type SignalParams GraphLoaded = IO ()
 
 instance DefaultClass ContextObj where
     classMembers = [
@@ -41,8 +45,12 @@ instance DefaultClass ContextObj where
               readMVar . taskGraphResult . fromObjRef
         , defPropertySigRO' "systemGraphResult" (Proxy :: Proxy SystemValidationDone) $
               readMVar . systemGraphResult . fromObjRef
+        , defPropertySigRO' "loadedGraph" (Proxy :: Proxy GraphLoaded) $
+              readMVar . loadedGraph . fromObjRef
         , defMethod "validateTask"   validateTask_
         , defMethod "validateSystem" validateSystem_
+        , defMethod "saveGraphToFile" saveGraphToFile
+        , defMethod "loadGraphFromFile" loadGraphFromFile
         ]
 
 type Task   = Directed   Int Int
@@ -85,11 +93,26 @@ validateSystem graphStr =
                            then Nothing
                            else Just "not fully connected"
 
+saveGraphToFile :: ObjRef ContextObj -> Text -> Text -> IO ()
+saveGraphToFile _ path graph = do
+    _ <- forkIO $ TIO.writeFile (T.unpack path) graph
+    return ()
+
+loadGraphFromFile :: ObjRef ContextObj -> Text -> IO ()
+loadGraphFromFile ctx path = do
+    _ <- forkIO $ do
+        let resultVar = loadedGraph . fromObjRef $ ctx
+        graph <- TIO.readFile (T.unpack path)
+        _ <- swapMVar resultVar graph
+        fireSignal (Proxy :: Proxy GraphLoaded) ctx
+    return ()
+
 main :: IO ()
 main = do
     tr <- newMVar "Init"
     sr <- newMVar "Init"
-    ctx <- newObjectDC $ ContextObj tr sr
+    gr <- newMVar ""
+    ctx <- newObjectDC $ ContextObj tr sr gr
 
     qml <- getDataFileName "qml/Window.qml"
     runEngineLoop defaultEngineConfig {

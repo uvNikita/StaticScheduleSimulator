@@ -12,8 +12,6 @@ Page {
             text: "asdf"
             action: Action {
                 iconName: "media-playback-start"
-                name: "asdf"
-                text: "asdf"
                 onTriggered: {
                     var system_graph = JSON.stringify(system.getGraph());
                     validateSystem(system_graph);

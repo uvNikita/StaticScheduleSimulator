@@ -28,6 +28,24 @@ function getGraph() {
     return {"nodes": nodes_ls, "edges": edges_ls};
 }
 
+function loadGraph(graph) {
+    unselectEdge();
+    unselectNode();
+    last = undefined;
+    nodes = {};
+    edges = {};
+    var nodes_ls = graph.nodes;
+    var edges_ls = graph.edges;
+    for (var i = 0; i < nodes_ls.length; i++) {
+        var node = nodes_ls[i];
+        nodes[node.idx] = node;
+    }
+    for (var i = 0; i < edges_ls.length; i++) {
+        var edge = edges_ls[i];
+        edges[edge.idx] = edge;
+    }
+}
+
 function draw_arrow(fromx, fromy, tox, toy) {
       var headlen = 15;
       var angle = Math.atan2(toy-fromy,tox-fromx);
@@ -150,8 +168,18 @@ function draw(t) {
     draw_nodes(t);
 }
 
+function genId() {
+    var idx = 0;
+    while (true) {
+        if (!(idx in nodes) && !(idx in edges))
+            return idx;
+        else
+            idx += 1;
+    }
+}
+
 function appendNode(x, y, weight) {
-    var idx = _cid;
+    var idx = genId();
     nodes[idx] = {
         idx: idx,
         x: x,
@@ -159,11 +187,10 @@ function appendNode(x, y, weight) {
         weight: Number(weight)
     };
     last = idx;
-    _cid += 1;
 }
 
 function appendEdge(from, to, weight) {
-    var idx = _cid;
+    var idx = genId();
     edges[idx] = {
         idx: idx,
         from: Number(from),
@@ -171,7 +198,6 @@ function appendEdge(from, to, weight) {
         weight: Number(weight)
     };
     last = idx;
-    _cid += 1;
 }
 
 function setNodeWeight(id, weight) {
