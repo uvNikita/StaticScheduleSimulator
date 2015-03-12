@@ -41,7 +41,9 @@ Page {
         title: "Please choose a file to save graph"
         nameFilters: [ "Graph files (*.grph)", "All files (*)" ]
         onAccepted: {
-            var path = String(fileUrl).slice(7);  // TODO implement proper path converting
+            var path = fileUrl.toString().replace("file://", "");  // TODO implement proper path converting
+            if (!/\.grph/.test(path))
+                path += ".grph"
             saveGraphToFile(path, JSON.stringify(Graph.getGraph()));
             saveDialog.close();
         }
@@ -57,7 +59,7 @@ Page {
         nameFilters: [ "Graph files (*.grph)", "All files (*)" ]
         selectExisting: true
         onAccepted: {
-            var path = String(fileUrl).slice(7);  // TODO implement proper path converting
+            var path = fileUrl.toString().replace("file://", "");  // TODO implement proper path converting
             onLGChanged.connect(loadGraph);
             loadGraphFromFile(path);
             loadDialog.close();
