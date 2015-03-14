@@ -9,18 +9,24 @@ Page {
 
     tools: ToolbarItems {
         ToolbarButton {
-            text: "asdf"
             action: Action {
+                id: modelateAction
                 iconName: "media-playback-start"
+                enabled: true
                 onTriggered: {
+                    enabled = false;
                     var system_graph = JSON.stringify(system.getGraph());
                     var task_graph = JSON.stringify(task.getGraph());
                     modelate(task_graph, system_graph);
-                    console.log(system_graph);
-                    console.log(task_graph);
                 }
             }
         }
+    }
+
+    Component.onCompleted: {
+        onModelationFinished.connect(function() {
+            modelateAction.enabled = true;
+        });
     }
 
     ColumnLayout {

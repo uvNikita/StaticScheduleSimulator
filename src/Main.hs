@@ -42,6 +42,10 @@ data GraphLoaded deriving Typeable
 instance SignalKeyClass GraphLoaded where
     type SignalParams GraphLoaded = IO ()
 
+data ModelationFinished deriving Typeable
+instance SignalKeyClass ModelationFinished where
+    type SignalParams ModelationFinished = IO ()
+
 instance DefaultClass ContextObj where
     classMembers = [
           defPropertySigRO "taskValidationResult"
@@ -60,6 +64,8 @@ instance DefaultClass ContextObj where
         , defMethod "saveGraphToFile" saveGraphToFile
 
         , defMethod "loadGraphFromFile" loadGraphFromFile
+
+        , defSignal "modelationFinished" (Proxy :: Proxy ModelationFinished)
         ]
 
 type Task   = Directed   Int Int
@@ -72,7 +78,7 @@ modelate_ ctx task system = void . forkIO $ do
     _ <- tryTakeMVar taskVar
     _ <- tryTakeMVar systemVar
 
-    _ <- forkIO $ validateTask_ ctx task
+    _ <- forkIO $ validateTask_   ctx task
     _ <- forkIO $ validateSystem_ ctx system
 
     tvr <- readMVar taskVar
@@ -81,6 +87,7 @@ modelate_ ctx task system = void . forkIO $ do
     case (tvr, svr) of
         (Nothing, Nothing) -> print ("OK!!" :: String)
         _ -> print ("NOT OK!!" :: String)
+    fireSignal (Proxy :: Proxy ModelationFinished) ctx
 
 validateTask_ :: ObjRef ContextObj -> Text -> IO ()
 validateTask_ ctx graphStr = do
