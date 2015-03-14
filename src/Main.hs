@@ -10,7 +10,7 @@ import Graphics.QML
 import Paths_StaticScheduleSimulator (getDataFileName)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Control.Concurrent.MVar (MVar, putMVar, takeMVar, tryTakeMVar, readMVar, swapMVar, newMVar)
+import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, readMVar, swapMVar, newMVar)
 import           Control.Concurrent (forkIO)
 import           Control.Monad (void)
 import           Data.Typeable (Typeable)
@@ -79,8 +79,8 @@ modelate_ ctx task system = void . forkIO $ do
     svr <- readMVar systemVar
 
     case (tvr, svr) of
-        (Nothing, Nothing) -> print "OK!!"
-        _ -> print "NOT OK!!"
+        (Nothing, Nothing) -> print ("OK!!" :: String)
+        _ -> print ("NOT OK!!" :: String)
 
 validateTask_ :: ObjRef ContextObj -> Text -> IO ()
 validateTask_ ctx graphStr = do
@@ -124,13 +124,11 @@ saveGraphToFile _ path graph = do
     return ()
 
 loadGraphFromFile :: ObjRef ContextObj -> Text -> IO ()
-loadGraphFromFile ctx path = do
-    _ <- forkIO $ do
+loadGraphFromFile ctx path = void . forkIO $ do
         let resultVar = loadedGraph . fromObjRef $ ctx
         graph <- TIO.readFile (T.unpack path)
         _ <- swapMVar resultVar graph
         fireSignal (Proxy :: Proxy GraphLoaded) ctx
-    return ()
 
 main :: IO ()
 main = do
