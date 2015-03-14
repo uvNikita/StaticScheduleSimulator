@@ -9,13 +9,7 @@ import "graph.js" as Graph
 
 Page {
     property bool directed: false;
-    property string lG: loadedGraph;
     function getGraph() { return Graph.getGraph() }
-    function loadGraph() {
-        onLGChanged.disconnect(loadGraph);
-        Graph.loadGraph(JSON.parse(lG));
-        canvas.requestPaint();
-    }
 
     tools: ToolbarItems {
         ToolbarButton {
@@ -60,8 +54,9 @@ Page {
         selectExisting: true
         onAccepted: {
             var path = fileUrl.toString().replace("file://", "");  // TODO implement proper path converting
-            onLGChanged.connect(loadGraph);
-            loadGraphFromFile(path);
+            var graph = JSON.parse(loadGraphFromFile(path));
+            Graph.loadGraph(graph);
+            canvas.requestPaint();
             loadDialog.close();
         }
         onRejected: {

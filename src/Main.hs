@@ -10,7 +10,7 @@ import Graphics.QML
 import Paths_StaticScheduleSimulator (getDataFileName)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, readMVar, swapMVar, newMVar)
+import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, readMVar, newMVar)
 import           Control.Concurrent (forkIO)
 import           Control.Monad (void)
 import           Data.Typeable (Typeable)
@@ -28,7 +28,7 @@ type ValidationResult = Maybe Text
 
 data ContextObj = ContextObj { taskValidationResult   :: MVar ValidationResult
                              , systemValidationResult :: MVar ValidationResult
-                             , loadedGraph :: MVar Text } deriving Typeable
+                             } deriving Typeable
 
 data TaskValidationDone deriving Typeable
 instance SignalKeyClass TaskValidationDone where
@@ -37,10 +37,6 @@ instance SignalKeyClass TaskValidationDone where
 data SystemValidationDone deriving Typeable
 instance SignalKeyClass SystemValidationDone where
     type SignalParams SystemValidationDone = IO ()
-
-data GraphLoaded deriving Typeable
-instance SignalKeyClass GraphLoaded where
-    type SignalParams GraphLoaded = IO ()
 
 data ModelationFinished deriving Typeable
 instance SignalKeyClass ModelationFinished where
@@ -57,9 +53,6 @@ instance DefaultClass ContextObj where
                             (getValidationResult systemValidationResult)
 
         , defMethod "modelate" modelate_
-
-        , defPropertySigRO' "loadedGraph" (Proxy :: Proxy GraphLoaded) $
-              readMVar . loadedGraph . fromObjRef
 
         , defMethod "saveGraphToFile" saveGraphToFile
 
@@ -126,23 +119,16 @@ getValidationResult var ctx = do
     return msg
 
 saveGraphToFile :: ObjRef ContextObj -> Text -> Text -> IO ()
-saveGraphToFile _ path graph = do
-    _ <- forkIO $ TIO.writeFile (T.unpack path) graph
-    return ()
+saveGraphToFile _ = TIO.writeFile . T.unpack
 
-loadGraphFromFile :: ObjRef ContextObj -> Text -> IO ()
-loadGraphFromFile ctx path = void . forkIO $ do
-        let resultVar = loadedGraph . fromObjRef $ ctx
-        graph <- TIO.readFile (T.unpack path)
-        _ <- swapMVar resultVar graph
-        fireSignal (Proxy :: Proxy GraphLoaded) ctx
+loadGraphFromFile :: ObjRef ContextObj -> Text -> IO Text
+loadGraphFromFile _ path = TIO.readFile (T.unpack path)
 
 main :: IO ()
 main = do
     tr <- newMVar Nothing
     sr <- newMVar Nothing
-    gr <- newMVar ""
-    ctx <- newObjectDC $ ContextObj tr sr gr
+    ctx <- newObjectDC $ ContextObj tr sr
 
     qml <- getDataFileName "qml/Window.qml"
     runEngineLoop defaultEngineConfig {
