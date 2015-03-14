@@ -10,21 +10,24 @@ import Graphics.QML
 import Paths_StaticScheduleSimulator (getDataFileName)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import Control.Concurrent.MVar (MVar, swapMVar, readMVar, newMVar)
-import Control.Concurrent (forkIO)
-import Data.Typeable (Typeable)
-import Data.Proxy (Proxy(..))
-import Data.Aeson (eitherDecode)
-import Data.Text (Text)
-import Data.Graph.Inductive (isConnected)
-import Data.Graph.Analysis (cyclesIn')
+import           Control.Concurrent.MVar (MVar, putMVar, takeMVar, tryTakeMVar, readMVar, swapMVar, newMVar)
+import           Control.Concurrent (forkIO)
+import           Control.Monad (void)
+import           Data.Typeable (Typeable)
+import           Data.Proxy (Proxy(..))
+import           Data.Aeson (eitherDecode)
+import           Data.Text (Text)
+import           Data.Graph.Inductive (isConnected)
+import           Data.Graph.Analysis (cyclesIn')
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
 import Graph
 
-data ContextObj = ContextObj { taskGraphResult :: MVar Text
-                             , systemGraphResult :: MVar Text
+type ValidationResult = Maybe Text
+
+data ContextObj = ContextObj { taskValidationResult   :: MVar ValidationResult
+                             , systemValidationResult :: MVar ValidationResult
                              , loadedGraph :: MVar Text } deriving Typeable
 
 data TaskValidationDone deriving Typeable
@@ -41,57 +44,79 @@ instance SignalKeyClass GraphLoaded where
 
 instance DefaultClass ContextObj where
     classMembers = [
-          defPropertySigRO "taskGraphResult" (Proxy :: Proxy TaskValidationDone) $
-              readMVar . taskGraphResult . fromObjRef
-        , defPropertySigRO' "systemGraphResult" (Proxy :: Proxy SystemValidationDone) $
-              readMVar . systemGraphResult . fromObjRef
+          defPropertySigRO "taskValidationResult"
+                           (Proxy :: Proxy TaskValidationDone)
+                           (getValidationResult taskValidationResult)
+
+        , defPropertySigRO' "systemValidationResult"
+                            (Proxy :: Proxy SystemValidationDone)
+                            (getValidationResult systemValidationResult)
+
+        , defMethod "modelate" modelate_
+
         , defPropertySigRO' "loadedGraph" (Proxy :: Proxy GraphLoaded) $
               readMVar . loadedGraph . fromObjRef
-        , defMethod "validateTask"   validateTask_
-        , defMethod "validateSystem" validateSystem_
+
         , defMethod "saveGraphToFile" saveGraphToFile
+
         , defMethod "loadGraphFromFile" loadGraphFromFile
         ]
 
 type Task   = Directed   Int Int
 type System = Undirected Int Int
 
+modelate_ :: ObjRef ContextObj -> Text -> Text -> IO ()
+modelate_ ctx task system = void . forkIO $ do
+    let taskVar   = taskValidationResult   . fromObjRef $ ctx
+    let systemVar = systemValidationResult . fromObjRef $ ctx
+    _ <- tryTakeMVar taskVar
+    _ <- tryTakeMVar systemVar
+
+    _ <- forkIO $ validateTask_ ctx task
+    _ <- forkIO $ validateSystem_ ctx system
+
+    tvr <- readMVar taskVar
+    svr <- readMVar systemVar
+
+    case (tvr, svr) of
+        (Nothing, Nothing) -> print "OK!!"
+        _ -> print "NOT OK!!"
+
 validateTask_ :: ObjRef ContextObj -> Text -> IO ()
 validateTask_ ctx graphStr = do
-    _ <- forkIO $ do
-        let resultVar = taskGraphResult . fromObjRef $ ctx
-        _ <- case validateTask (T.unpack graphStr) of
-            Just err -> swapMVar resultVar (T.concat ["error: ", T.pack err])
-            Nothing  -> swapMVar resultVar "ok"
-        fireSignal (Proxy :: Proxy TaskValidationDone) ctx
-    return ()
+    let resultVar = taskValidationResult . fromObjRef $ ctx
+    putMVar resultVar $ validateTask (T.unpack graphStr)
+    fireSignal (Proxy :: Proxy TaskValidationDone) ctx
 
 validateSystem_ :: ObjRef ContextObj -> Text -> IO ()
 validateSystem_ ctx graphStr = do
-    _ <- forkIO $ do
-        let resultVar = systemGraphResult . fromObjRef $ ctx
-        _ <- case validateSystem (T.unpack graphStr) of
-            Just err -> swapMVar resultVar (T.concat ["error: ", T.pack err])
-            Nothing  -> swapMVar resultVar "ok"
-        fireSignal (Proxy :: Proxy SystemValidationDone) ctx
-    return ()
+    let resultVar = systemValidationResult . fromObjRef $ ctx
+    putMVar resultVar $ validateSystem (T.unpack graphStr)
+    fireSignal (Proxy :: Proxy SystemValidationDone) ctx
 
-validateTask :: String -> Maybe String
+validateTask :: String -> Maybe Text
 validateTask graphStr =
     case eitherDecode (BS.pack graphStr) :: Either String Task of
-        Left err    -> Just err
+        Left err    -> Just $ T.pack err
         Right graph -> if isDAG graph
                            then Nothing
                            else Just "not acyclic"
     where isDAG = null . cyclesIn'
 
-validateSystem :: String -> Maybe String
+validateSystem :: String -> Maybe Text
 validateSystem graphStr =
     case eitherDecode (BS.pack graphStr) :: Either String System of
-        Left err    -> Just err
+        Left err    -> Just $ T.pack err
         Right graph -> if isConnected graph
                            then Nothing
                            else Just "not fully connected"
+
+getValidationResult :: (ContextObj -> MVar ValidationResult) -> ObjRef ContextObj -> IO Text
+getValidationResult var ctx = do
+    let resultVar = var . fromObjRef $ ctx
+    res <- readMVar resultVar
+    let msg = maybe "ok" (T.append "error:") res
+    return msg
 
 saveGraphToFile :: ObjRef ContextObj -> Text -> Text -> IO ()
 saveGraphToFile _ path graph = do
@@ -109,8 +134,8 @@ loadGraphFromFile ctx path = do
 
 main :: IO ()
 main = do
-    tr <- newMVar "Init"
-    sr <- newMVar "Init"
+    tr <- newMVar Nothing
+    sr <- newMVar Nothing
     gr <- newMVar ""
     ctx <- newObjectDC $ ContextObj tr sr gr
 

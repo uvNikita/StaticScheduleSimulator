@@ -14,9 +14,8 @@ Page {
                 iconName: "media-playback-start"
                 onTriggered: {
                     var system_graph = JSON.stringify(system.getGraph());
-                    validateSystem(system_graph);
                     var task_graph = JSON.stringify(task.getGraph());
-                    validateTask(task_graph);
+                    modelate(task_graph, system_graph);
                     console.log(system_graph);
                     console.log(task_graph);
                 }
@@ -32,14 +31,14 @@ Page {
                 Layout.preferredWidth: parent.width / 2
                 horizontalAlignment: Text.AlignHCenter
                 fontSize: "large"
-                text: taskGraphResult
+                text: taskValidationResult
             }
             Label {
                 Layout.fillWidth: true
                 Layout.preferredWidth: parent.width / 2
                 horizontalAlignment: Text.AlignHCenter
                 fontSize: "large"
-                text: systemGraphResult
+                text: systemValidationResult
             }
         }
         Canvas {
