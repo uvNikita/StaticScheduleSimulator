@@ -5,7 +5,6 @@
 module Graph (
       Directed
     , Undirected
-    , Node
     , Validator (..)
     , validate
     , validateOne

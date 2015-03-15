@@ -9,6 +9,7 @@ module Main (
 import Graphics.QML
 import Paths_StaticScheduleSimulator (getDataFileName)
 
+import           System.Random (newStdGen)
 import qualified Data.ByteString.Lazy.Char8 as BS
 import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, isEmptyMVar, readMVar, readMVar, newEmptyMVar)
 import           Control.Concurrent (forkIO)
@@ -21,6 +22,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
 import Graph
+import Shelude
 
 data ContextObj = ContextObj { taskGraphVar   :: MVar (Either Error Task)
                              , systemGraphVar :: MVar (Either Error System)
@@ -57,9 +59,6 @@ instance DefaultClass ContextObj where
         , defSignal "modelationFinished" (Proxy :: Proxy ModelationFinished)
         ]
 
-type Task   = Directed   Int Int
-type System = Undirected Int Int
-
 modelate_ :: ObjRef ContextObj -> Text -> Text -> IO ()
 modelate_ ctx taskStr systemStr = void . forkIO $ do
     let taskVar   = taskGraphVar   . fromObjRef $ ctx
@@ -74,8 +73,11 @@ modelate_ ctx taskStr systemStr = void . forkIO $ do
     svr <- readMVar systemVar
 
     case (tvr, svr) of
-        (Right task, Right system) -> print ("OK!!" :: String)
-        _ -> print ("NOT OK!!" :: String)
+        (Right task, Right system) -> do
+            rg <- newStdGen
+            let queues = genQueues task rg
+            print queues
+        _ -> return ()
     fireSignal (Proxy :: Proxy ModelationFinished) ctx
 
 parseTask_ :: ObjRef ContextObj -> Text -> IO ()
