@@ -10,24 +10,20 @@ import Graphics.QML
 import Paths_StaticScheduleSimulator (getDataFileName)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, readMVar, newMVar)
+import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, isEmptyMVar, readMVar, readMVar, newEmptyMVar)
 import           Control.Concurrent (forkIO)
 import           Control.Monad (void)
 import           Data.Typeable (Typeable)
 import           Data.Proxy (Proxy(..))
-import           Data.Aeson (eitherDecode)
 import           Data.Text (Text)
-import           Data.Graph.Inductive (isConnected)
-import           Data.Graph.Analysis (cyclesIn')
+import           Data.Graph.Inductive (DynGraph)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
 import Graph
 
-type ValidationResult = Maybe Text
-
-data ContextObj = ContextObj { taskValidationResult   :: MVar ValidationResult
-                             , systemValidationResult :: MVar ValidationResult
+data ContextObj = ContextObj { taskGraphVar   :: MVar (Either Error Task)
+                             , systemGraphVar :: MVar (Either Error System)
                              } deriving Typeable
 
 data TaskValidationDone deriving Typeable
@@ -46,11 +42,11 @@ instance DefaultClass ContextObj where
     classMembers = [
           defPropertySigRO "taskValidationResult"
                            (Proxy :: Proxy TaskValidationDone)
-                           (getValidationResult taskValidationResult)
+                           (getValidationResult taskGraphVar)
 
         , defPropertySigRO' "systemValidationResult"
                             (Proxy :: Proxy SystemValidationDone)
-                            (getValidationResult systemValidationResult)
+                            (getValidationResult systemGraphVar)
 
         , defMethod "modelate" modelate_
 
@@ -65,58 +61,64 @@ type Task   = Directed   Int Int
 type System = Undirected Int Int
 
 modelate_ :: ObjRef ContextObj -> Text -> Text -> IO ()
-modelate_ ctx task system = void . forkIO $ do
-    let taskVar   = taskValidationResult   . fromObjRef $ ctx
-    let systemVar = systemValidationResult . fromObjRef $ ctx
+modelate_ ctx taskStr systemStr = void . forkIO $ do
+    let taskVar   = taskGraphVar   . fromObjRef $ ctx
+    let systemVar = systemGraphVar . fromObjRef $ ctx
     _ <- tryTakeMVar taskVar
     _ <- tryTakeMVar systemVar
 
-    _ <- forkIO $ validateTask_   ctx task
-    _ <- forkIO $ validateSystem_ ctx system
+    _ <- forkIO $ parseTask_   ctx taskStr
+    _ <- forkIO $ parseSystem_ ctx systemStr
 
     tvr <- readMVar taskVar
     svr <- readMVar systemVar
 
     case (tvr, svr) of
-        (Nothing, Nothing) -> print ("OK!!" :: String)
+        (Right task, Right system) -> print ("OK!!" :: String)
         _ -> print ("NOT OK!!" :: String)
     fireSignal (Proxy :: Proxy ModelationFinished) ctx
 
-validateTask_ :: ObjRef ContextObj -> Text -> IO ()
-validateTask_ ctx graphStr = do
-    let resultVar = taskValidationResult . fromObjRef $ ctx
-    putMVar resultVar $ validateTask (T.unpack graphStr)
+parseTask_ :: ObjRef ContextObj -> Text -> IO ()
+parseTask_ ctx graphStr = do
+    let resultVar = taskGraphVar . fromObjRef $ ctx
+    putMVar resultVar $ parseTask (T.unpack graphStr)
     fireSignal (Proxy :: Proxy TaskValidationDone) ctx
 
-validateSystem_ :: ObjRef ContextObj -> Text -> IO ()
-validateSystem_ ctx graphStr = do
-    let resultVar = systemValidationResult . fromObjRef $ ctx
-    putMVar resultVar $ validateSystem (T.unpack graphStr)
+parseSystem_ :: ObjRef ContextObj -> Text -> IO ()
+parseSystem_ ctx graphStr = do
+    let resultVar = systemGraphVar . fromObjRef $ ctx
+    putMVar resultVar $ parseSystem (T.unpack graphStr)
     fireSignal (Proxy :: Proxy SystemValidationDone) ctx
 
-validateTask :: String -> Maybe Text
-validateTask graphStr =
-    case eitherDecode (BS.pack graphStr) :: Either String Task of
-        Left err    -> Just $ T.pack err
-        Right graph -> if isDAG graph
-                           then Nothing
-                           else Just "not acyclic"
-    where isDAG = null . cyclesIn'
+check :: DynGraph gr => [Validator] -> gr a b -> Either Error (gr a b)
+check vs graph = case validate graph vs of
+                     [] -> Right graph
+                     errs -> Left $ T.intercalate ", " errs
 
-validateSystem :: String -> Maybe Text
-validateSystem graphStr =
-    case eitherDecode (BS.pack graphStr) :: Either String System of
-        Left err    -> Just $ T.pack err
-        Right graph -> if isConnected graph
-                           then Nothing
-                           else Just "not fully connected"
+parseTask :: String -> Either Error Task
+parseTask graphStr = eitherDecode (BS.pack graphStr) >>= check [DAG]
 
-getValidationResult :: (ContextObj -> MVar ValidationResult) -> ObjRef ContextObj -> IO Text
+parseSystem :: String -> Either Error System
+parseSystem graphStr =  eitherDecode (BS.pack graphStr) >>= check [Connected]
+
+getValidationResult :: DynGraph gr => (ContextObj -> MVar (Either Error (gr a b)))
+                                   -> ObjRef ContextObj
+                                   -> IO Text
 getValidationResult var ctx = do
     let resultVar = var . fromObjRef $ ctx
-    res <- readMVar resultVar
-    let msg = maybe "ok" (T.append "error:") res
-    return msg
+    isEmpty <- isEmptyMVar resultVar
+    if isEmpty
+        then return "init"
+        else do
+            res <- readMVar resultVar
+            let msg = either (T.append "error:") (const "ok") res
+            return msg
+
+    --TODO: use tryReadMVar after update base>=4.7
+    --res <- tryReadMVar resultVar
+    --let getMsg = either (T.append "error:") "ok"
+    --let msg = maybe "init" getMsg res
+    --return msg
 
 saveGraphToFile :: ObjRef ContextObj -> Text -> Text -> IO ()
 saveGraphToFile _ = TIO.writeFile . T.unpack
@@ -126,8 +128,8 @@ loadGraphFromFile _ path = TIO.readFile (T.unpack path)
 
 main :: IO ()
 main = do
-    tr <- newMVar Nothing
-    sr <- newMVar Nothing
+    tr <- newEmptyMVar
+    sr <- newEmptyMVar
     ctx <- newObjectDC $ ContextObj tr sr
 
     qml <- getDataFileName "qml/Window.qml"
