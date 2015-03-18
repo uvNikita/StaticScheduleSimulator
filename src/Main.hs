@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main (
     main
@@ -20,13 +21,21 @@ import           Data.Text (Text)
 import           Data.Graph.Inductive (DynGraph)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import           Data.Aeson (ToJSON, toJSON, object, (.=), encode)
 
 import Graph
 import Shelude
 
-data ContextObj = ContextObj { taskGraphVar   :: MVar (Either Error Task)
-                             , systemGraphVar :: MVar (Either Error System)
+data ContextObj = ContextObj { taskGraphVar   :: MVar (Either [Error] Task)
+                             , systemGraphVar :: MVar (Either [Error] System)
                              } deriving Typeable
+
+data ValidationResult = ValidationResult { validationStatus :: Text
+                                         , validationErrors :: [Text] }
+
+instance ToJSON ValidationResult where
+    toJSON (ValidationResult {..}) = object ["status" .= validationStatus
+                                           , "errors" .= validationErrors]
 
 data TaskValidationDone deriving Typeable
 instance SignalKeyClass TaskValidationDone where
@@ -92,29 +101,40 @@ parseSystem_ ctx graphStr = do
     putMVar resultVar $ parseSystem (T.unpack graphStr)
     fireSignal (Proxy :: Proxy SystemValidationDone) ctx
 
-check :: DynGraph gr => [Validator] -> gr a b -> Either Error (gr a b)
+check :: DynGraph gr => [Validator] -> gr a b -> Either [Error] (gr a b)
 check vs graph = case validate graph vs of
-                     [] -> Right graph
-                     errs -> Left $ T.intercalate ", " errs
+                     []   -> Right graph
+                     errs -> Left  errs
 
-parseTask :: String -> Either Error Task
-parseTask graphStr = eitherDecode (BS.pack graphStr) >>= check [DAG]
+parseGraph validators graphStr =
+    case eitherDecode (BS.pack graphStr) of
+        Left e   -> Left [e]
+        Right gr -> case validate gr validators of
+                        [] -> Right gr
+                        es -> Left es
 
-parseSystem :: String -> Either Error System
-parseSystem graphStr =  eitherDecode (BS.pack graphStr) >>= check [Connected]
 
-getValidationResult :: DynGraph gr => (ContextObj -> MVar (Either Error (gr a b)))
+parseTask :: String -> Either [Error] Task
+parseTask = parseGraph [DAG]
+
+parseSystem :: String -> Either [Error] System
+--parseSystem graphStr = eitherDecode (BS.pack graphStr) >>= check [Connected]
+parseSystem = parseGraph [Connected]
+
+getValidationResult :: DynGraph gr => (ContextObj -> MVar (Either [Error] (gr a b)))
                                    -> ObjRef ContextObj
                                    -> IO Text
 getValidationResult var ctx = do
     let resultVar = var . fromObjRef $ ctx
     isEmpty <- isEmptyMVar resultVar
-    if isEmpty
-        then return "init"
-        else do
-            res <- readMVar resultVar
-            let msg = either (T.append "error:") (const "ok") res
-            return msg
+    res <- if isEmpty
+               then return (ValidationResult "init" [])
+               else do
+                   res <- readMVar resultVar
+                   return $ either (ValidationResult "error")
+                                   (const $ ValidationResult "ok" [])
+                                   res
+    return . T.pack . BS.unpack . encode $ res
 
     --TODO: use tryReadMVar after update base>=4.7
     --res <- tryReadMVar resultVar

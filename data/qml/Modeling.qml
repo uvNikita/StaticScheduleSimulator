@@ -33,19 +33,46 @@ Page {
         anchors.fill: parent
         RowLayout {
             Label {
+                property var res: JSON.parse(taskValidationResult)
                 Layout.fillWidth: true
                 Layout.preferredWidth: parent.width / 2
                 horizontalAlignment: Text.AlignHCenter
                 fontSize: "large"
-                text: taskValidationResult
+                text: "Task: " + res.errors
+                onResChanged: {
+                    if (res.status == "ok") {
+                        color = "green";
+                    } else if (res.status == "error") {
+                        color = "red";
+                    } else {
+                        color = "black";
+                    }
+                }
             }
             Label {
+                property var res: JSON.parse(systemValidationResult)
                 Layout.fillWidth: true
                 Layout.preferredWidth: parent.width / 2
                 horizontalAlignment: Text.AlignHCenter
                 fontSize: "large"
-                text: systemValidationResult
+                text: "System: " + res.errors
+                onResChanged: {
+                    if (res.status == "ok") {
+                        color = "green";
+                    } else if (res.status == "error") {
+                        color = "red";
+                    } else {
+                        color = "black";
+                    }
+                }
             }
+            // Label {
+            //     Layout.fillWidth: true
+            //     Layout.preferredWidth: parent.width / 2
+            //     horizontalAlignment: Text.AlignHCenter
+            //     fontSize: "large"
+            //     text: "System: " + JSON.parse(systemValidationResult).errors
+            // }
         }
         Canvas {
             Layout.fillHeight: true
