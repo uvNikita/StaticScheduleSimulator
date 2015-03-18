@@ -32,8 +32,9 @@ queue task CritPathQueue = sortBy cmpCrits (nodes task)
     where cmpCrits n1 n2 = if nCrit1 == nCrit2
                                then (compare `on` getWeight task) n1 n2
                                else compare nCrit1 nCrit2
-              where nCrit1 = nCrit task n1
-                    nCrit2 = nCrit task n2
+              where nCrit1 = nCrit rtask n1
+                    nCrit2 = nCrit rtask n2
+                    rtask  = grev task
 queue task (RandomQueue rg) = shuffle' ns (length ns) rg
     where ns = nodes task
 
