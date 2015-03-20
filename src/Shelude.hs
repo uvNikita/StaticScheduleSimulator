@@ -30,7 +30,7 @@ queue task DiffQueue = sortBy (compare `on` diff) (nodes task)
     where diff n = lastTime task n - earlyTime task n
 queue task CritPathQueue = sortBy cmpCrits (nodes task)
     where cmpCrits n1 n2 = if nCrit1 == nCrit2
-                               then (compare `on` getWeight task) n1 n2
+                               then (compare `on` getWeight task) n2 n1
                                else compare nCrit1 nCrit2
               where nCrit1 = nCrit rtask n1
                     nCrit2 = nCrit rtask n2
