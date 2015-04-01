@@ -101,11 +101,6 @@ parseSystem_ ctx graphStr = do
     putMVar resultVar $ parseSystem (T.unpack graphStr)
     fireSignal (Proxy :: Proxy SystemValidationDone) ctx
 
-check :: DynGraph gr => [Validator] -> gr a b -> Either [Error] (gr a b)
-check vs graph = case validate graph vs of
-                     []   -> Right graph
-                     errs -> Left  errs
-
 parseGraph validators graphStr =
     case eitherDecode (BS.pack graphStr) of
         Left e   -> Left [e]
@@ -115,11 +110,10 @@ parseGraph validators graphStr =
 
 
 parseTask :: String -> Either [Error] Task
-parseTask = parseGraph [DAG]
+parseTask = parseGraph [NonEmpty, DAG]
 
 parseSystem :: String -> Either [Error] System
---parseSystem graphStr = eitherDecode (BS.pack graphStr) >>= check [Connected]
-parseSystem = parseGraph [Connected]
+parseSystem = parseGraph [NonEmpty, Connected]
 
 getValidationResult :: DynGraph gr => (ContextObj -> MVar (Either [Error] (gr a b)))
                                    -> ObjRef ContextObj

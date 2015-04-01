@@ -16,7 +16,7 @@ import           Data.Maybe (mapMaybe)
 import qualified Data.Aeson as A
 import           Data.Aeson (FromJSON, parseJSON, Value(..), (.:))
 import           Data.Aeson.Types (Parser)
-import           Data.Graph.Inductive (Gr, mkGraph, isConnected, undir, Graph, DynGraph, LNode, LEdge)
+import           Data.Graph.Inductive (Gr, mkGraph, isConnected, undir, Graph, DynGraph, LNode, LEdge, isEmpty)
 import           Data.Graph.Analysis (cyclesIn')
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -28,11 +28,12 @@ newtype Edge b = Edge { unEdge :: LEdge b }
 newtype Directed   a b = Directed   (Gr a b) deriving (Show, Graph, DynGraph)
 newtype Undirected a b = Undirected (Gr a b) deriving (Show, Graph, DynGraph)
 
-data Validator = DAG | Connected
+data Validator = DAG | Connected | NonEmpty
 
 vError :: Validator -> Error
 vError DAG       = "not acyclic"
 vError Connected = "not fully connected"
+vError NonEmpty  = "empty graph"
 
 type Error = Text
 
@@ -47,6 +48,7 @@ validateOne graph validator = if pass validator graph
 pass :: DynGraph gr => Validator -> gr a b -> Bool
 pass DAG = null . cyclesIn'
 pass Connected = isConnected
+pass NonEmpty  = not . isEmpty
 
 eitherDecode :: FromJSON b => ByteString -> Either Text b
 eitherDecode s = case A.eitherDecode s of

@@ -39,14 +39,14 @@ queue task (RandomQueue rg) = shuffle' ns (length ns) rg
     where ns = nodes task
 
 
-nCrits     :: Task -> [(Node, Int)]
-tCrits     :: Task -> [(Node, Int)]
-earlyTimes :: Task -> [(Node, Int)]
-lastTimes  :: Task -> [(Node, Int)]
-nCrits     = mapg nCrit
-tCrits     = mapg tCrit
-earlyTimes = mapg earlyTime
-lastTimes  = mapg lastTime
+-- nCrits     :: Task -> [(Node, Int)]
+-- tCrits     :: Task -> [(Node, Int)]
+-- earlyTimes :: Task -> [(Node, Int)]
+-- lastTimes  :: Task -> [(Node, Int)]
+-- nCrits     = mapg nCrit
+-- tCrits     = mapg tCrit
+-- earlyTimes = mapg earlyTime
+-- lastTimes  = mapg lastTime
 
 nCrit :: Task -> Node -> Int
 nCrit task node = maximum $ map length allPaths
@@ -67,5 +67,5 @@ lastTime  task node = tCritGlobal - tCrit task node
 getWeight :: DynGraph gr => gr a b -> Node -> a
 getWeight gr node = fromJust $ lab gr node
 
-mapg :: Graph gr => (gr a b -> Node -> t) -> gr a b -> [(Node, t)]
-mapg f gr = map (\ n -> (n, f gr n)) (nodes gr)
+-- mapg :: Graph gr => (gr a b -> Node -> t) -> gr a b -> [(Node, t)]
+-- mapg f gr = map (\ n -> (n, f gr n)) (nodes gr)
