@@ -14,7 +14,7 @@ Page {
     tools: ToolbarItems {
         ToolbarButton {
             action: Action {
-                iconName: "view-restore"
+                iconName: "edit"
                 onTriggered: {
                     PopupUtils.open(generateDialog.dialog);
                 }

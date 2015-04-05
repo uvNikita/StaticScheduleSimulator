@@ -19,8 +19,8 @@ import qualified Data.Aeson as A
 import           Data.Aeson (FromJSON, parseJSON, ToJSON, toJSON, object, Value(..), (.:), (.=))
 import           Data.Aeson.Types (Parser)
 import           Data.Graph.Inductive ( Gr, mkGraph, isConnected, undir
-                                      , Graph, DynGraph, LNode, LEdge, isEmpty
-                                      , labNodes, leveln, lab, labEdges)
+                                      , Graph, DynGraph, isEmpty
+                                      , leveln, lab, labEdges)
 import           Data.Graph.Analysis (cyclesIn', rootsOf')
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -32,7 +32,6 @@ import           System.Random.Shuffle (shuffle')
 import qualified System.Random as R
 import           System.Random (randomRs, Random, RandomGen)
 
---newtype Node a = Node { unNode :: LNode a }
 data Node = Node { nodeId :: Int
                  , nodeWeight :: Int
                  , nodeX :: Int
@@ -43,8 +42,6 @@ data Edge = Edge { edgeId :: Int
                  , edgeTo :: Int
                  , edgeWeight :: Int }
                  
---newtype Edge b = Edge { unEdge :: LEdge b }
-
 newtype Directed   a b = Directed   (Gr a b) deriving (Show, Graph, DynGraph)
 newtype Undirected a b = Undirected (Gr a b) deriving (Show, Graph, DynGraph)
 

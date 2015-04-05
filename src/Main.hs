@@ -59,7 +59,7 @@ instance DefaultClass ContextObj where
                             (Proxy :: Proxy SystemValidationDone)
                             (getValidationResult systemGraphVar)
 
-        , defMethod "modelate" modelate_
+        , defMethod "modelate" modelate
 
         , defMethod "saveGraphToFile" saveGraphToFile
 
@@ -70,8 +70,8 @@ instance DefaultClass ContextObj where
         , defSignal "modelationFinished" (Proxy :: Proxy ModelationFinished)
         ]
 
-modelate_ :: ObjRef ContextObj -> Text -> Text -> IO ()
-modelate_ ctx taskStr systemStr = void . forkIO $ do
+modelate :: ObjRef ContextObj -> Text -> Text -> IO ()
+modelate ctx taskStr systemStr = void . forkIO $ do
     let taskVar   = taskGraphVar   . fromObjRef $ ctx
     let systemVar = systemGraphVar . fromObjRef $ ctx
     _ <- tryTakeMVar taskVar
@@ -109,7 +109,6 @@ parseGraph validators graphStr =
         Right gr -> case validate gr validators of
                         [] -> Right gr
                         es -> Left es
-
 
 parseTask :: String -> Either [Error] Task
 parseTask = parseGraph [NonEmpty, DAG]
