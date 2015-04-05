@@ -169,7 +169,7 @@ function draw(t) {
 }
 
 function genId() {
-    var idx = 0;
+    var idx = 1;
     while (true) {
         if (!(idx in nodes) && !(idx in edges))
             return idx;

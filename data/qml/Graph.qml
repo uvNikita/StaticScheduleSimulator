@@ -14,6 +14,14 @@ Page {
     tools: ToolbarItems {
         ToolbarButton {
             action: Action {
+                iconName: "view-restore"
+                onTriggered: {
+                    PopupUtils.open(generateDialog.dialog);
+                }
+            }
+        }
+        ToolbarButton {
+            action: Action {
                 iconName: "view-fullscreen"
                 onTriggered: {
                     saveDialog.open();
@@ -27,6 +35,14 @@ Page {
                     loadDialog.open();
                 }
             }
+        }
+    }
+
+    GraphGenerationDialog {
+        id: generateDialog
+        callback: function (graph) {
+            Graph.loadGraph(graph);
+            canvas.requestPaint();
         }
     }
 

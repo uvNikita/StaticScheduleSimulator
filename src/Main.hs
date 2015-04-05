@@ -65,6 +65,8 @@ instance DefaultClass ContextObj where
 
         , defMethod "loadGraphFromFile" loadGraphFromFile
 
+        , defMethod "generateTask" generateTask
+
         , defSignal "modelationFinished" (Proxy :: Proxy ModelationFinished)
         ]
 
@@ -141,6 +143,12 @@ saveGraphToFile _ = TIO.writeFile . T.unpack
 
 loadGraphFromFile :: ObjRef ContextObj -> Text -> IO Text
 loadGraphFromFile _ path = TIO.readFile (T.unpack path)
+
+generateTask :: ObjRef ContextObj -> Int -> Int -> Int -> Int -> Int -> Double -> IO Text
+generateTask _ nodeMin nodeMax edgeMin edgeMax nodesCount correlation = do
+    rGen <- newStdGen
+    let graph = generate (nodeMin, nodeMax) (edgeMin, edgeMax) nodesCount correlation rGen :: Task
+    return . T.pack . BS.unpack . encode . toJSON $ graph
 
 main :: IO ()
 main = do
