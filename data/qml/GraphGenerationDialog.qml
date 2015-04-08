@@ -18,6 +18,7 @@ Item {
                     TextField {
                         Layout.fillWidth: true
                         id: nodeWeightMin
+                        text: "1"
                         placeholderText: "Node min"
                         validator: IntValidator { bottom: 1; top: 99; }
                     }
@@ -25,6 +26,7 @@ Item {
                     TextField {
                         Layout.fillWidth: true
                         id: nodeWeightMax
+                        text: "20"
                         placeholderText: "Node max"
                         validator: IntValidator { bottom: 1; top: 99; }
                     }
@@ -33,6 +35,7 @@ Item {
                     TextField {
                         Layout.fillWidth: true
                         id: edgeWeightMin
+                        text: "1"
                         placeholderText: "Edge min"
                         validator: IntValidator { bottom: 1; top: 99; }
                     }
@@ -40,6 +43,7 @@ Item {
                     TextField {
                         Layout.fillWidth: true
                         id: edgeWeightMax
+                        text: "20"
                         placeholderText: "Edge max"
                         validator: IntValidator { bottom: 1; top: 99; }
                     }
@@ -49,6 +53,7 @@ Item {
                 TextField {
                     Layout.fillWidth: true
                     id: nodesCount
+                    text: "10"
                     placeholderText: "Nodes count"
                     validator: IntValidator { bottom: 1; top: 99; }
                 }
@@ -56,6 +61,7 @@ Item {
                 TextField {
                     Layout.fillWidth: true
                     id: correlation
+                    text: "0.6"
                     placeholderText: "Correlation"
                     validator: DoubleValidator { bottom: 0.0; top: 2.0; notation: DoubleValidator.StandardNotation}
                 }
