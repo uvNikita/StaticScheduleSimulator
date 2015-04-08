@@ -14,7 +14,7 @@ module Graph (
     , generate
 ) where
 
-import           Data.Maybe (mapMaybe)
+import           Data.Maybe (fromJust, mapMaybe)
 import qualified Data.Aeson as A
 import           Data.Aeson (FromJSON, parseJSON, ToJSON, toJSON, object, Value(..), (.:), (.=))
 import           Data.Aeson.Types (Parser)
@@ -25,12 +25,14 @@ import           Data.Graph.Analysis (cyclesIn', rootsOf')
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.ByteString.Lazy (ByteString)
-import           Data.List (find, tails, groupBy)
-import           Data.Maybe (fromJust)
+import           Data.List (inits, groupBy)
 import           Data.Function (on)
+
 import           System.Random.Shuffle (shuffle')
 import qualified System.Random as R
 import           System.Random (randomRs, Random, RandomGen)
+import           Control.Arrow ((&&&))
+
 
 data Node = Node { nodeId :: Int
                  , nodeWeight :: Int
@@ -78,27 +80,30 @@ generate
     -> gen      -- ^ Random generator
     -> gr a b   -- ^ Resulting random graph
 generate nodeWeightRange
-         edgeWeightRange
+         (eMinParam, eMaxParam)
          nodeCount
          correlation
-         rGen =  mkGraph nodes edges
+         rGen = mkGraph nodes edges
     where
         nodes = zip [1..] $ take nodeCount nodesStream
         nodesWeight = fromIntegral . sum . map snd $ nodes
         edgesWeight = round $ nodesWeight / correlation - nodesWeight
+
+        edgesCount = nodeCount * (nodeCount - 1) `div` 2
+
+        edgeWeightRange = if eMinCalc > eMinParam
+                              then (eMinCalc, eMaxParam + (eMinCalc - eMinParam))
+                              else (eMinParam, eMaxParam)
+            where eMinCalc = edgesWeight `div` fromIntegral edgesCount
+
         (egen', ngen) = R.split rGen
         (egen, sgen)  = R.split egen'
         nodesStream = randomRs nodeWeightRange egen
         edgesStream = randomRs edgeWeightRange ngen
 
-        edgesCount = nodeCount * (nodeCount - 1) `div` 2
-
-        edgesWeights' = findWithMaxElems (< edgesWeight) $ take edgesCount edgesStream
-            where findWithMaxElems p = snd
-                                     . fromJust
-                                     . find (p . fst)
-                                     . map (\ l -> (sum l, l))
-                                     . tails
+        edgesWeights' = last
+                      . takeWhile ((< edgesWeight) . sum)
+                      . inits $ take (edgesCount - 1) edgesStream
         lastEdgeWeight = edgesWeight - sum edgesWeights'
         edgesWeights = lastEdgeWeight : edgesWeights'
 
@@ -161,11 +166,11 @@ instance FromJSON (Undirected Int Int) where
 instance ToJSON (Directed Int Int) where
     toJSON (Directed gr) = object ["nodes" .= nodes, "edges" .= edges]
         where nodes = concatMap fromLevel levels
-              edges = map toEdge $ zip [1..] (labEdges gr)
-              toEdge (idx, (f, t, w)) = Edge { edgeId = idx, edgeFrom = f, edgeTo = t, edgeWeight = w }
+              edges = zipWith toEdge [1..] (labEdges gr)
+              toEdge idx (f, t, w) = Edge { edgeId = idx, edgeFrom = f, edgeTo = t, edgeWeight = w }
               levels = groupper . groupBy ((==) `on` snd) $ lvls
                       where roots = rootsOf' gr
-                            lvls  = leveln (zip roots [1, 1 ..]) gr
-                            groupper = map (\ group -> ((snd . head) group, map fst group))
-              fromLevel (lvl, ns) = map toNode (zip [1..] ns)
-                  where toNode (shift, idx) = Node idx (fromJust $ lab gr idx) (shift * 90) (lvl * 180)
+                            lvls  = leveln (zip roots [0, 0 ..]) gr
+                            groupper = map ((snd . head) &&& map fst)
+              fromLevel (lvl, ns) = zipWith toNode ns [0..]
+                  where toNode idx shift = Node idx (fromJust $ lab gr idx) (shift * 90 + 40) (lvl * 180 + 40)

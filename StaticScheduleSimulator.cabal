@@ -34,6 +34,5 @@ executable StaticScheduleSimulator
 
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -Wall
-  GHC-options:         -threaded
+  ghc-options:         -Wall -threaded -O2
   build-depends:
