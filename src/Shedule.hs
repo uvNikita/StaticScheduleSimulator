@@ -1,4 +1,4 @@
-module Shelude (
+module Shedule (
       genQueues
     , Task
     , System

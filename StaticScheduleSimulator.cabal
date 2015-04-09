@@ -19,7 +19,7 @@ data-dir: "data"
 
 executable StaticScheduleSimulator
   main-is: Main.hs
-  other-modules: Paths_StaticScheduleSimulator
+  other-modules: Paths_StaticScheduleSimulator, Graph, Shedule, Main
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.8
                      , hsqml == 0.3.*

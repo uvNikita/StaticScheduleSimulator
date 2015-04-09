@@ -24,7 +24,7 @@ import qualified Data.Text.IO as TIO
 import           Data.Aeson (ToJSON, toJSON, object, (.=), encode)
 
 import Graph
-import Shelude
+import Shedule
 
 data ContextObj = ContextObj { taskGraphVar   :: MVar (Either [Error] Task)
                              , systemGraphVar :: MVar (Either [Error] System)
