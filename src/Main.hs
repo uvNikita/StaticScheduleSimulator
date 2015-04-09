@@ -1,30 +1,33 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Main (
     main
 ) where
 
-import Graphics.QML
-import Paths_StaticScheduleSimulator (getDataFileName)
+import           Graphics.QML
+import           Paths_StaticScheduleSimulator (getDataFileName)
 
-import           System.Random (newStdGen)
-import qualified Data.ByteString.Lazy.Char8 as BS
-import           Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar, isEmptyMVar, readMVar, readMVar, newEmptyMVar)
-import           Control.Concurrent (forkIO)
-import           Control.Monad (void)
-import           Data.Typeable (Typeable)
-import           Data.Proxy (Proxy(..))
-import           Data.Text (Text)
-import           Data.Graph.Inductive (DynGraph)
-import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
-import           Data.Aeson (ToJSON, toJSON, object, (.=), encode)
+import           Control.Concurrent            (forkIO)
+import           Control.Concurrent.MVar       (MVar, isEmptyMVar, newEmptyMVar,
+                                                putMVar, readMVar, readMVar,
+                                                tryTakeMVar)
+import           Control.Monad                 (void)
+import           Data.Aeson                    (ToJSON, encode, object, toJSON,
+                                                (.=))
+import qualified Data.ByteString.Lazy.Char8    as BS
+import           Data.Graph.Inductive          (DynGraph)
+import           Data.Proxy                    (Proxy (..))
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as TIO
+import           Data.Typeable                 (Typeable)
+import           System.Random                 (newStdGen)
 
-import Graph
-import Shedule
+import           Graph
+import           Shedule
 
 data ContextObj = ContextObj { taskGraphVar   :: MVar (Either [Error] Task)
                              , systemGraphVar :: MVar (Either [Error] System)

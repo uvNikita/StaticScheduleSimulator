@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 module Graph (
       Directed
@@ -14,36 +14,37 @@ module Graph (
     , generate
 ) where
 
-import           Data.Maybe (fromJust, mapMaybe)
-import qualified Data.Aeson as A
-import           Data.Aeson (FromJSON, parseJSON, ToJSON, toJSON, object, Value(..), (.:), (.=))
-import           Data.Aeson.Types (Parser)
-import           Data.Graph.Inductive ( Gr, mkGraph, isConnected, undir
-                                      , Graph, DynGraph, isEmpty
-                                      , leveln, lab, labEdges)
-import           Data.Graph.Analysis (cyclesIn', rootsOf')
-import           Data.Text (Text)
-import qualified Data.Text as T
-import           Data.ByteString.Lazy (ByteString)
-import           Data.List (inits, groupBy)
-import           Data.Function (on)
+import           Data.Aeson            (FromJSON, ToJSON, Value (..), object,
+                                        parseJSON, toJSON, (.:), (.=))
+import qualified Data.Aeson            as A
+import           Data.Aeson.Types      (Parser)
+import           Data.ByteString.Lazy  (ByteString)
+import           Data.Function         (on)
+import           Data.Graph.Analysis   (cyclesIn', rootsOf')
+import           Data.Graph.Inductive  (DynGraph, Gr, Graph, isConnected,
+                                        isEmpty, lab, labEdges, leveln, mkGraph,
+                                        undir)
+import           Data.List             (groupBy, inits)
+import           Data.Maybe            (fromJust, mapMaybe)
+import           Data.Text             (Text)
+import qualified Data.Text             as T
 
+import           Control.Arrow         ((&&&))
+import           System.Random         (Random, RandomGen, randomRs)
+import qualified System.Random         as R
 import           System.Random.Shuffle (shuffle')
-import qualified System.Random as R
-import           System.Random (randomRs, Random, RandomGen)
-import           Control.Arrow ((&&&))
 
 
-data Node = Node { nodeId :: Int
+data Node = Node { nodeId     :: Int
                  , nodeWeight :: Int
-                 , nodeX :: Int
-                 , nodeY :: Int }
+                 , nodeX      :: Int
+                 , nodeY      :: Int }
 
-data Edge = Edge { edgeId :: Int
-                 , edgeFrom :: Int
-                 , edgeTo :: Int
+data Edge = Edge { edgeId     :: Int
+                 , edgeFrom   :: Int
+                 , edgeTo     :: Int
                  , edgeWeight :: Int }
-                 
+
 newtype Directed   a b = Directed   (Gr a b) deriving (Show, Graph, DynGraph)
 newtype Undirected a b = Undirected (Gr a b) deriving (Show, Graph, DynGraph)
 

@@ -4,15 +4,16 @@ module Shedule (
     , System
 ) where
 
-import System.Random (StdGen)
-import System.Random.Shuffle (shuffle')
-import Data.List (sortBy)
-import Data.Maybe (fromJust)
-import Data.Function (on)
-import Data.Graph.Inductive (Graph, Node, nodes, match, lab, grev, DynGraph)
-import Data.Graph.Analysis (pathTree)
+import           Data.Function         (on)
+import           Data.Graph.Analysis   (pathTree)
+import           Data.Graph.Inductive  (DynGraph, Graph, Node, grev, lab, match,
+                                        nodes)
+import           Data.List             (sortBy)
+import           Data.Maybe            (fromJust)
+import           System.Random         (StdGen)
+import           System.Random.Shuffle (shuffle')
 
-import Graph (Directed, Undirected)
+import           Graph                 (Directed, Undirected)
 
 type Queue = [Node]
 
