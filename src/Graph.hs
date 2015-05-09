@@ -108,7 +108,11 @@ generate nodeWeightRange
         lastEdgeWeight = edgesWeight - sum edgesWeights'
         edgesWeights = lastEdgeWeight : edgesWeights'
 
-        connections = shuffle' [(f, t) | f <- [1 .. nodeCount], t <- [1 .. nodeCount], f < t] edgesCount sgen
+        connections = shuffle' [(f, t) | f <- [1 .. nodeCount],
+                                         t <- [1 .. nodeCount],
+                                         f < t]
+                               edgesCount
+                               sgen
         edges = zipWith (\ (f, t) w -> (f, t, w)) connections edgesWeights
 
 

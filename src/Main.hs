@@ -15,8 +15,8 @@ import           Control.Concurrent.MVar       (MVar, isEmptyMVar, newEmptyMVar,
                                                 putMVar, readMVar, readMVar,
                                                 tryTakeMVar)
 import           Control.Monad                 (void)
-import           Data.Aeson                    (ToJSON, encode, object, toJSON,
-                                                (.=))
+import           Data.Aeson                    (FromJSON, ToJSON, encode,
+                                                object, toJSON, (.=))
 import qualified Data.ByteString.Lazy.Char8    as BS
 import           Data.Graph.Inductive          (DynGraph)
 import           Data.Proxy                    (Proxy (..))
@@ -88,9 +88,10 @@ modelate ctx taskStr systemStr = void . forkIO $ do
 
     case (tvr, svr) of
         (Right task, Right system) -> do
-            rg <- newStdGen
-            let queues = genQueues task rg
-            print queues
+            print task
+            _rg <- newStdGen
+            let _simulation = simulate undefined system task
+            return ()
         _ -> return ()
     fireSignal (Proxy :: Proxy ModelationFinished) ctx
 
@@ -106,6 +107,7 @@ parseSystem_ ctx graphStr = do
     putMVar resultVar $ parseSystem (T.unpack graphStr)
     fireSignal (Proxy :: Proxy SystemValidationDone) ctx
 
+parseGraph :: (DynGraph gr, FromJSON (gr a b)) => [Validator] -> String -> Either [Text] (gr a b)
 parseGraph validators graphStr =
     case eitherDecode (BS.pack graphStr) of
         Left e   -> Left [e]
