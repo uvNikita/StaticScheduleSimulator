@@ -12,3 +12,6 @@ cabal.config
 *.swp
 lib/
 .idea/
+*.sublime-workspace
+*.sublime-project
+*.tags
