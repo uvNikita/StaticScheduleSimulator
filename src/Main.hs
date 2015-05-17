@@ -90,8 +90,12 @@ modelate ctx taskStr systemStr = void . forkIO $ do
         (Right task, Right system) -> do
             print task
             _rg <- newStdGen
-            let _simulation = simulate undefined system task
-            return ()
+            let config = SimulationConfig { linksCount = 4
+                                          , connectionType = FullDuplex
+                                          , queueGen = DiffQueue
+                                          , simulationType = WithPreTransfers} 
+            let simulation = simulate config system task
+            print simulation
         _ -> return ()
     fireSignal (Proxy :: Proxy ModelationFinished) ctx
 
