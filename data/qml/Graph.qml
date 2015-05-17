@@ -49,6 +49,7 @@ Page {
     FileDialog {
         id: saveDialog
         title: "Please choose a file to save graph"
+        selectExisting: false
         nameFilters: [ "Graph files (*.grph)", "All files (*)" ]
         onAccepted: {
             var path = fileUrl.toString().replace("file://", "");  // TODO implement proper path converting
