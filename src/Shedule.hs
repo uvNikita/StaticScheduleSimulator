@@ -1,8 +1,11 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Shedule (
       genQueues
@@ -15,7 +18,9 @@ module Shedule (
     , QueueGen (..)
 ) where
 
-import           Data.Foldable                   (any, concatMap, foldlM)
+import           Data.Aeson
+import           Data.Foldable                   (any, concatMap, foldlM,
+                                                  toList)
 import           Data.Function                   (on)
 import           Data.Graph.Analysis             (pathTree)
 import           Data.Graph.Inductive            (DynGraph, Graph, Node, esp,
@@ -26,6 +31,8 @@ import           Data.IntervalMap.Generic.Strict (Interval, IntervalMap,
                                                   rightClosed, upperBound,
                                                   within)
 import qualified Data.IntervalMap.Generic.Strict as IMap
+import           Data.IntMap.Strict              (IntMap)
+import qualified Data.IntMap.Strict              as IntMap
 import           Data.List                       (delete, find, intercalate,
                                                   minimumBy, sortBy)
 import           Data.Map.Strict                 (Map)
@@ -39,7 +46,7 @@ import           Prelude                         hiding (any, concatMap)
 
 
 
-import           System.Random                   (StdGen)
+import           System.Random                   (StdGen, mkStdGen)
 import           System.Random.Shuffle           (shuffle')
 
 import           Control.Applicative             ((<$>), (<*>))
@@ -62,45 +69,104 @@ type ConnectionSpeed = Int
 type TaskWeight     = Int
 type TransferWeight = Int
 
+type Ticks = Int
+
 type Task   = Directed   TaskWeight TransferWeight
 type System = Undirected NodeSpeed  ConnectionSpeed
 
 data QueueGen = DiffQueue | CritPathQueue | RandomQueue StdGen
+instance FromJSON QueueGen where
+    parseJSON (Object v) = do
+        qtype <- v .: "type"
+        case qtype of
+            String "diff"      -> return DiffQueue
+            String "crit_path" -> return CritPathQueue
+            String "random"    -> RandomQueue . mkStdGen <$> v .: "seed"
+    parseJSON _          = fail "queue generator must be object"
 
-newtype Simulation = Simulation { unSimulation :: Map Node NodeFlow }
+newtype Simulation = Simulation { unSimulation :: IntMap NodeFlow }
 
 instance Show Simulation where
-    show (Simulation sim) = intercalate "\n" (map show $ Map.toList sim)
+    show (Simulation sim) = intercalate "\n" (map show $ IntMap.toList sim)
+
+instance ToJSON Simulation where
+    toJSON (Simulation sim) = toJSON sim
 
 data SimulationConfig = SimulationConfig { linksCount     :: Int
                                          , connectionType :: ConnectionType
                                          , queueGen       :: QueueGen
                                          , simulationType :: SimulationType }
+
+instance FromJSON SimulationConfig where
+    parseJSON (Object v) = do
+        linksCount     <- v .: "links"
+        connectionType <- v .: "connection"
+        queueGen       <- v .: "queue"
+        simulationType <- v .: "simulation"
+
+        return SimulationConfig {..}
+    parseJSON _          = fail "node expected to be an object"
+
+
 data SimulationType = WithPreTransfers | WithoutPreTransfers
+
+instance FromJSON SimulationType where
+    parseJSON (String "pretransfers")    = return WithPreTransfers
+    parseJSON (String "no_pretransfers") = return WithoutPreTransfers
+    parseJSON _                          = fail "simulation can be 'pretransfers' or 'no_pretransfers'"
+
 
 data ConnectionType = FullDuplex | HalfDuplex
 
+instance FromJSON ConnectionType where
+    parseJSON (String "fullduplex") = return FullDuplex
+    parseJSON (String "halfduplex") = return HalfDuplex
+    parseJSON _                     = fail "conneciton type must be 'fullduplex' or 'halfduplex'"
+
+
 data NodeFlow = NodeFlow { cpuFlow :: CPUFlow, linkFlows :: Seq LinkFlow } deriving (Show)
+
+instance ToJSON NodeFlow where
+    toJSON (NodeFlow cpu links) = object [ "cpu"   .= cpu
+                                         , "links" .= toList links ]
 
 type CPUFlow = Flow CPUFlowInfo
 type LinkFlow = Flow LinkFlowInfo
 
+
 type Flow a = IntervalMap (Ticks, Ticks) a
 
-type Ticks = Int
+instance (Interval k e, ToJSON e, ToJSON k, ToJSON a) => ToJSON (IntervalMap k a) where
+    toJSON = toJSON . map toJSONone . IMap.assocs
+        where toJSONone (k, v) = object [ "from" .= lowerBound k
+                                        , "to"   .= upperBound k
+                                        , "val"  .= v ]
+
 
 data CPUFlowInfo  = CPUFlowInfo  { cpuTaskId :: TaskID } deriving (Show, Eq)
+
+instance ToJSON CPUFlowInfo where
+    toJSON (CPUFlowInfo task) = toJSON task
+
 
 data LinkFlowInfo = LinkFlowInfo { linkFromId :: TaskID
                                  , linkToId   :: TaskID
                                  , linkNodeId :: NodeID } deriving (Show)
+
+instance ToJSON LinkFlowInfo where
+    toJSON (LinkFlowInfo {..}) = toJSON $ concat [ show linkFromId
+                                                 , "->"
+                                                 , show linkToId
+                                                 , "("
+                                                 , show linkNodeId
+                                                 , ")" ]
 
 isLinkTo :: NodeID -> LinkFlowInfo -> Bool
 isLinkTo to (LinkFlowInfo {..}) = to == linkNodeId
 
 data SimulationState = SimulationState { currTime       :: Ticks
                                        , currTaskQueue  :: TaskQueue
-                                       , currSimulation :: Map Node NodeFlow
+                                       , currSimulation :: IntMap NodeFlow
                                        , taskNode       :: Map TaskID NodeID }
 
 data Transfer = Transfer TaskID TaskWeight [NodeID]
@@ -118,14 +184,14 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
                                       , currTaskQueue  = tq
                                       , currSimulation = initSimulation
                                       , taskNode       = Map.empty }
-          initSimulation = Map.fromList $ map (\ n -> (n, emptyNodeFlow)) (nodes systemGraph)
+          initSimulation = IntMap.fromList $ map (\ n -> (n, emptyNodeFlow)) (nodes systemGraph)
           emptyNodeFlow = NodeFlow emptyFlow (Seq.replicate linksCount emptyFlow)
           emptyFlow = IMap.empty
 
           isFinished = null . unTaskQueue . currTaskQueue <$> get
           updateTime newTime = modify (\ st -> st { currTime = newTime })
 
-          getCpuFlows = map cpuFlow . Map.elems . currSimulation <$> get
+          getCpuFlows = map cpuFlow . IntMap.elems . currSimulation <$> get
 
           getNewTime = do
               SimulationState { currTime } <- get
@@ -147,11 +213,11 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
 
           getFreeNodes = do
               SimulationState { currSimulation } <- get
-              filterM isFree (Map.keys currSimulation)
+              filterM isFree (IntMap.keys currSimulation)
 
           isFree node = do
               SimulationState { currSimulation, currTime } <- get
-              let flow = cpuFlow . fromJust $ Map.lookup node currSimulation
+              let flow = cpuFlow . fromJust $ IntMap.lookup node currSimulation
               return . null $ flow `intersecting` (currTime, maxBound)
 
           findBestNode task = do
@@ -188,15 +254,15 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
 
           send node link time info =
               modify $ \ st @ (SimulationState { currSimulation }) ->
-                  st { currSimulation = Map.adjust modifyNodeFlow node currSimulation }
+                  st { currSimulation = IntMap.adjust modifyNodeFlow node currSimulation }
               where modifyNodeFlow (NodeFlow cf lf) = NodeFlow cf $ Seq.adjust modifyLinkFlow link lf
                     modifyLinkFlow = IMap.insert time info
 
           doSend :: TaskID -> TaskID -> Int -> Ticks -> (NodeID, NodeID) -> State SimulationState Ticks
           doSend source target weight lowerTime (from, to) = do
             SimulationState { currSimulation } <- get
-            let NodeFlow _ linkFlowsFrom = currSimulation Map.! from
-            let NodeFlow _ linkFlowsTo   = currSimulation Map.! to
+            let NodeFlow _ linkFlowsFrom = currSimulation IntMap.! from
+            let NodeFlow _ linkFlowsTo   = currSimulation IntMap.! to
             let findLinks start = if checkChannel
                     then (start,,) <$> Seq.findIndexL isFreeLink linkFlowsFrom
                                    <*> Seq.findIndexL isFreeLink linkFlowsTo
@@ -218,8 +284,8 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
 
           calcStartTime source = do
               SimulationState { taskNode, currSimulation } <- get
-              let node     = fromJust $ Map.lookup source taskNode
-              let nodeFlow = fromJust $ Map.lookup node   currSimulation
+              let node     = fromJust $    Map.lookup source taskNode
+              let nodeFlow = fromJust $ IntMap.lookup node   currSimulation
               let ((_, end), _) = fromJust . find ((== CPUFlowInfo source) . snd) $ IMap.assocs (cpuFlow nodeFlow)
               return end
 
@@ -234,8 +300,8 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
 
           assignCalculation node task time =
               modify $ \ st @ ( SimulationState { currSimulation, taskNode } ) ->
-                      st { taskNode       = Map.insert task node taskNode
-                         , currSimulation = Map.adjust modifyNodeFlow node currSimulation }
+                      st { taskNode       =    Map.insert task node taskNode
+                         , currSimulation = IntMap.adjust modifyNodeFlow node currSimulation }
               where calc = fromJust $ lab taskGraph task
                     modifyNodeFlow (NodeFlow cf lfs) = NodeFlow newCPUFlow lfs
                         where newCPUFlow = IMap.insert (time, time + calc) (CPUFlowInfo task) cf
