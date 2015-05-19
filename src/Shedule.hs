@@ -22,11 +22,12 @@ import           Data.Graph.Inductive            (DynGraph, Graph, Node, esp,
                                                   grev, lab, lpre, match,
                                                   neighbors, nodes, pre)
 import           Data.IntervalMap.Generic.Strict (Interval, IntervalMap,
-                                                  lowerBound, rightClosed,
-                                                  upperBound, within, intersecting)
+                                                  intersecting, lowerBound,
+                                                  rightClosed, upperBound,
+                                                  within)
 import qualified Data.IntervalMap.Generic.Strict as IMap
-import           Data.List                       (delete, find, minimumBy,
-                                                  sortBy, intercalate)
+import           Data.List                       (delete, find, intercalate,
+                                                  minimumBy, sortBy)
 import           Data.Map.Strict                 (Map)
 import qualified Data.Map.Strict                 as Map
 import           Data.Maybe                      (catMaybes, fromJust)
@@ -120,12 +121,11 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
           initSimulation = Map.fromList $ map (\ n -> (n, emptyNodeFlow)) (nodes systemGraph)
           emptyNodeFlow = NodeFlow emptyFlow (Seq.replicate linksCount emptyFlow)
           emptyFlow = IMap.empty
+
           isFinished = null . unTaskQueue . currTaskQueue <$> get
           updateTime newTime = modify (\ st -> st { currTime = newTime })
 
-          getCpuFlows = do
-              SimulationState { currSimulation } <- get
-              return $ map cpuFlow (Map.elems currSimulation)
+          getCpuFlows = map cpuFlow . Map.elems . currSimulation <$> get
 
           getNewTime = do
               SimulationState { currTime } <- get
@@ -135,7 +135,6 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
               return $ minimum finishTimes
 
           getReadyTasks = do
-              --SimulationState { currTime } <- get
               finishedTasks <- getFinishedTasks
               let isReady task = all (`member` finishedTasks) (pre taskGraph task)
               SimulationState { currTaskQueue } <- get
@@ -157,7 +156,6 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
 
           findBestNode task = do
               SimulationState { taskNode } <- get
-              --let taskTime = fromJust $ lab taskGraph task
               let findNode tid = fromJust $ Map.lookup tid taskNode
               let parents      = map (first findNode) (lpre taskGraph task)
               freeNodes <- getFreeNodes
@@ -176,13 +174,13 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
               where costFrom (pNode, pWeight) = pWeight * length (esp pNode node systemGraph)
 
           rmTask task =
-              modify $ \ st@(SimulationState { currTaskQueue }) ->
+              modify $ \ st @ (SimulationState { currTaskQueue }) ->
                   st { currTaskQueue = TaskQueue $ task `delete` unTaskQueue currTaskQueue }
 
           getTransfers task node = do
               SimulationState { taskNode } <- get
-              let findNode tid    = fromJust $ Map.lookup tid taskNode
-              let parents         = lpre taskGraph task
+              let findNode tid = fromJust $ Map.lookup tid taskNode
+              let parents      = lpre taskGraph task
               let transfer (pid, weight) = Transfer pid
                                                     weight
                                                     (esp (findNode pid) node systemGraph)
@@ -195,31 +193,33 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
                     modifyLinkFlow = IMap.insert time info
 
           doSend :: TaskID -> TaskID -> Int -> Ticks -> (NodeID, NodeID) -> State SimulationState Ticks
-          doSend source target weight start (from, to) = do
+          doSend source target weight lowerTime (from, to) = do
             SimulationState { currSimulation } <- get
-            let end = start + weight
             let NodeFlow _ linkFlowsFrom = currSimulation Map.! from
             let NodeFlow _ linkFlowsTo   = currSimulation Map.! to
-            let isSending toNode = any (isLinkTo toNode) . map snd . concatMap (`IMap.intersecting` (start, end))
-            let findLinks st = if checkChannel
-                                   then (st,,) <$> Seq.findIndexL isFreeLink linkFlowsFrom
-                                               <*> Seq.findIndexL isFreeLink linkFlowsTo
-                                   else Nothing
-                                   where checkChannel = case connectionType of
-                                                            HalfDuplex -> checkFrom && checkTo
-                                                            FullDuplex -> checkFrom
-                                         checkFrom = not  $ isSending to   linkFlowsFrom
-                                         checkTo   = not  $ isSending from linkFlowsTo
-                                         isFreeLink flow = null $ IMap.intersecting flow (start, end)
+            let findLinks start = if checkChannel
+                    then (start,,) <$> Seq.findIndexL isFreeLink linkFlowsFrom
+                                   <*> Seq.findIndexL isFreeLink linkFlowsTo
+                    else Nothing
+                    where checkChannel = case connectionType of
+                                             HalfDuplex -> checkFrom && checkTo
+                                             FullDuplex -> checkFrom
+                          checkFrom = not $ isSending to   linkFlowsFrom
+                          checkTo   = not $ isSending from linkFlowsTo
+                          end = start + weight
+                          isSending toNode = any (isLinkTo toNode)
+                                           . map snd
+                                           . concatMap (`IMap.intersecting` (start, end))
+                          isFreeLink flow = null $ IMap.intersecting flow (start, end)
 
-            let (st, lf, _) = head . catMaybes $ map findLinks [start..] -- ignoring link to. Maybe wrong
+            let (st, lf, _) = head . catMaybes $ map findLinks [lowerTime..] -- ignoring link to. Maybe wrong
             send from lf (st, st + weight) $ LinkFlowInfo source target to
             return $ st + weight
 
           calcStartTime source = do
               SimulationState { taskNode, currSimulation } <- get
-              let node = fromJust $ Map.lookup source taskNode
-              let nodeFlow = fromJust $ Map.lookup node currSimulation
+              let node     = fromJust $ Map.lookup source taskNode
+              let nodeFlow = fromJust $ Map.lookup node   currSimulation
               let ((_, end), _) = fromJust . find ((== CPUFlowInfo source) . snd) $ IMap.assocs (cpuFlow nodeFlow)
               return end
 

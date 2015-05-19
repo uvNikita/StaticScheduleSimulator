@@ -57,18 +57,14 @@ instance DefaultClass ContextObj where
           defPropertySigRO "taskValidationResult"
                            (Proxy :: Proxy TaskValidationDone)
                            (getValidationResult taskGraphVar)
+        , defPropertySigRO "systemValidationResult"
+                           (Proxy :: Proxy SystemValidationDone)
+                           (getValidationResult systemGraphVar)
 
-        , defPropertySigRO' "systemValidationResult"
-                            (Proxy :: Proxy SystemValidationDone)
-                            (getValidationResult systemGraphVar)
-
-        , defMethod "modelate" modelate
-
-        , defMethod "saveGraphToFile" saveGraphToFile
-
+        , defMethod "modelate"          modelate
+        , defMethod "saveGraphToFile"   saveGraphToFile
         , defMethod "loadGraphFromFile" loadGraphFromFile
-
-        , defMethod "generateTask" generateTask
+        , defMethod "generateTask"      generateTask
 
         , defSignal "modelationFinished" (Proxy :: Proxy ModelationFinished)
         ]
@@ -93,7 +89,7 @@ modelate ctx taskStr systemStr = void . forkIO $ do
             let config = SimulationConfig { linksCount = 4
                                           , connectionType = FullDuplex
                                           , queueGen = DiffQueue
-                                          , simulationType = WithPreTransfers} 
+                                          , simulationType = WithPreTransfers}
             let simulation = simulate config system task
             print simulation
         _ -> return ()
