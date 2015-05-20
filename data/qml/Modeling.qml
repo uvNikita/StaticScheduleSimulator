@@ -25,6 +25,8 @@ Page {
 
     Component.onCompleted: {
         onModelationFinished.connect(function() {
+            console.log("DONE");
+            console.log(simulationResult);
             modelateAction.enabled = true;
         });
     }

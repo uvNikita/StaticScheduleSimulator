@@ -10,13 +10,14 @@ module Main (
 import           Graphics.QML
 import           Paths_StaticScheduleSimulator (getDataFileName)
 
+import           Control.Applicative           ((<$>))
 import           Control.Concurrent            (forkIO)
 import           Control.Concurrent.MVar       (MVar, isEmptyMVar, newEmptyMVar,
                                                 putMVar, readMVar, readMVar,
                                                 tryTakeMVar)
 import           Control.Monad                 (void)
 import           Data.Aeson                    (FromJSON, ToJSON, encode,
-                                                object, toJSON, (.=))
+                                                object, toJSON, (.=), Value(Null))
 import qualified Data.ByteString.Lazy.Char8    as BS
 import           Data.Graph.Inductive          (DynGraph)
 import           Data.Proxy                    (Proxy (..))
@@ -31,10 +32,11 @@ import           Shedule
 
 data ContextObj = ContextObj { taskGraphVar   :: MVar (Either [Error] Task)
                              , systemGraphVar :: MVar (Either [Error] System)
-                             } deriving Typeable
+                             , simulationVar  :: MVar Simulation } deriving Typeable
 
 data ValidationResult = ValidationResult { validationStatus :: Text
-                                         , validationErrors :: [Text] }
+                                         , validationErrors :: [Text]
+                                         }
 
 instance ToJSON ValidationResult where
     toJSON (ValidationResult {..}) = object ["status" .= validationStatus
@@ -60,6 +62,9 @@ instance DefaultClass ContextObj where
         , defPropertySigRO "systemValidationResult"
                            (Proxy :: Proxy SystemValidationDone)
                            (getValidationResult systemGraphVar)
+        , defPropertySigRO "simulationResult"
+                           (Proxy :: Proxy ModelationFinished)
+                           getSimulationResult
 
         , defMethod "modelate"          modelate
         , defMethod "saveGraphToFile"   saveGraphToFile
@@ -73,8 +78,10 @@ modelate :: ObjRef ContextObj -> Text -> Text -> IO ()
 modelate ctx taskStr systemStr = void . forkIO $ do
     let taskVar   = taskGraphVar   . fromObjRef $ ctx
     let systemVar = systemGraphVar . fromObjRef $ ctx
+    let simVar    = simulationVar . fromObjRef $ ctx
     _ <- tryTakeMVar taskVar
     _ <- tryTakeMVar systemVar
+    _ <- tryTakeMVar simVar
 
     _ <- forkIO $ parseTask_   ctx taskStr
     _ <- forkIO $ parseSystem_ ctx systemStr
@@ -91,9 +98,19 @@ modelate ctx taskStr systemStr = void . forkIO $ do
                                           , queueGen = DiffQueue
                                           , simulationType = WithPreTransfers}
             let simulation = simulate config system task
+            putMVar simVar simulation
             print simulation
         _ -> return ()
     fireSignal (Proxy :: Proxy ModelationFinished) ctx
+
+
+getSimulationResult :: ObjRef ContextObj -> IO Text
+getSimulationResult ctx = do
+    maybeRes <- tryReadMVar . simulationVar . fromObjRef $ ctx
+    let resJSON = case maybeRes of
+                      Nothing  -> Null
+                      Just res -> toJSON res
+    return . T.pack . BS.unpack . encode $ resJSON
 
 parseTask_ :: ObjRef ContextObj -> Text -> IO ()
 parseTask_ ctx graphStr = do
@@ -126,21 +143,18 @@ getValidationResult :: DynGraph gr => (ContextObj -> MVar (Either [Error] (gr a 
                                    -> IO Text
 getValidationResult var ctx = do
     let resultVar = var . fromObjRef $ ctx
-    isEmpty <- isEmptyMVar resultVar
-    res <- if isEmpty
-               then return (ValidationResult "init" [])
-               else do
-                   res <- readMVar resultVar
-                   return $ either (ValidationResult "error")
-                                   (const $ ValidationResult "ok" [])
-                                   res
-    return . T.pack . BS.unpack . encode $ res
+    maybeRes <- tryReadMVar resultVar
+    let vr = case maybeRes of
+                 Nothing  -> ValidationResult "init" []
+                 Just res -> either (ValidationResult "error") (const $ ValidationResult "ok" []) res
+    return . T.pack . BS.unpack . encode $ vr
 
-    --TODO: use tryReadMVar after update base>=4.7
-    --res <- tryReadMVar resultVar
-    --let getMsg = either (T.append "error:") "ok"
-    --let msg = maybe "init" getMsg res
-    --return msg
+tryReadMVar :: MVar a -> IO (Maybe a) -- TODO: use library tryReadMVar after update base>=4.7
+tryReadMVar var = do
+    isEmpty <- isEmptyMVar var
+    if isEmpty
+        then return Nothing
+        else Just <$> readMVar var
 
 saveGraphToFile :: ObjRef ContextObj -> Text -> Text -> IO ()
 saveGraphToFile _ = TIO.writeFile . T.unpack
@@ -156,9 +170,10 @@ generateTask _ nodeMin nodeMax edgeMin edgeMax nodesCount correlation = do
 
 main :: IO ()
 main = do
-    tr <- newEmptyMVar
-    sr <- newEmptyMVar
-    ctx <- newObjectDC $ ContextObj tr sr
+    taskGraphVar   <- newEmptyMVar
+    systemGraphVar <- newEmptyMVar
+    simulationVar  <- newEmptyMVar
+    ctx <- newObjectDC $ ContextObj {..}
 
     qml <- getDataFileName "qml/Window.qml"
     runEngineLoop defaultEngineConfig {

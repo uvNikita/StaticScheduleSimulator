@@ -16,6 +16,7 @@ module Shedule (
     , SimulationType (..)
     , ConnectionType (..)
     , QueueGen (..)
+    , Simulation
 ) where
 
 import           Data.Aeson
@@ -82,6 +83,7 @@ instance FromJSON QueueGen where
             String "diff"      -> return DiffQueue
             String "crit_path" -> return CritPathQueue
             String "random"    -> RandomQueue . mkStdGen <$> v .: "seed"
+            _                  -> fail "queue type can be: 'diff', 'crit_path', 'random'"
     parseJSON _          = fail "queue generator must be object"
 
 newtype Simulation = Simulation { unSimulation :: IntMap NodeFlow }
@@ -211,9 +213,7 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
               cpuFlows <- getCpuFlows
               return . S.fromList $ map (cpuTaskId . snd) $ concatMap (`within` (0, currTime)) cpuFlows
 
-          getFreeNodes = do
-              SimulationState { currSimulation } <- get
-              filterM isFree (IntMap.keys currSimulation)
+          getFreeNodes = filterM isFree =<< (IntMap.keys . currSimulation <$> get)
 
           isFree node = do
               SimulationState { currSimulation, currTime } <- get
@@ -300,7 +300,7 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
 
           assignCalculation node task time =
               modify $ \ st @ ( SimulationState { currSimulation, taskNode } ) ->
-                      st { taskNode       =    Map.insert task node taskNode
+                      st { taskNode       =    Map.insert task           node taskNode
                          , currSimulation = IntMap.adjust modifyNodeFlow node currSimulation }
               where calc = fromJust $ lab taskGraph task
                     modifyNodeFlow (NodeFlow cf lfs) = NodeFlow newCPUFlow lfs
