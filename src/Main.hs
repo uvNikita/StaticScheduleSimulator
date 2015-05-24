@@ -94,7 +94,6 @@ doSimulate ctx taskStr systemStr configStr = void . forkIO $ do
     case (tvr, svr) of
         (Right task, Right system) -> do
             let config     = fromJust . decode . BS.pack . T.unpack $ configStr
-            print config
             let simulation = simulate config system task
             putMVar simVar simulation
         _ -> return ()
