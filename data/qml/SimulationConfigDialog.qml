@@ -6,7 +6,8 @@ import Ubuntu.Components.Popups 0.1
 import Ubuntu.Components.ListItems 1.0 as ListItem
 
 Item {
-    property var callback;
+    property var success_callback;
+    property var cancel_callback;
     property var dialog: component
     Component {
         id: component
@@ -80,6 +81,7 @@ Item {
                         text: "Cancel"
                         onClicked: {
                             PopupUtils.close(simulationDialog);
+                            cancel_callback();
                         }
                     }
                 }

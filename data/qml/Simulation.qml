@@ -26,11 +26,14 @@ Page {
 
     SimulationConfigDialog {
         id: simulationConfig
-        callback: function (config) {
+        success_callback: function (config) {
             var system_graph = JSON.stringify(system.getGraph());
             var task_graph = JSON.stringify(task.getGraph());
             var config = JSON.stringify(config);
             simulate(task_graph, system_graph, config);
+        }
+        cancel_callback: function () {
+            simulateAction.enabled = true;
         }
     }
 
