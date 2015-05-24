@@ -16,10 +16,12 @@ import           Control.Concurrent.MVar       (MVar, isEmptyMVar, newEmptyMVar,
                                                 putMVar, readMVar, readMVar,
                                                 tryTakeMVar)
 import           Control.Monad                 (void)
-import           Data.Aeson                    (FromJSON, ToJSON, encode,
-                                                object, toJSON, (.=), Value(Null))
+import           Data.Aeson                    (FromJSON, ToJSON, Value (Null),
+                                                decode, encode, object, toJSON,
+                                                (.=))
 import qualified Data.ByteString.Lazy.Char8    as BS
 import           Data.Graph.Inductive          (DynGraph)
+import           Data.Maybe                    (fromJust)
 import           Data.Proxy                    (Proxy (..))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
@@ -74,11 +76,11 @@ instance DefaultClass ContextObj where
         , defSignal "simulationFinished" (Proxy :: Proxy SimulationFinished)
         ]
 
-doSimulate :: ObjRef ContextObj -> Text -> Text -> IO ()
-doSimulate ctx taskStr systemStr = void . forkIO $ do
+doSimulate :: ObjRef ContextObj -> Text -> Text -> Text -> IO ()
+doSimulate ctx taskStr systemStr configStr = void . forkIO $ do
     let taskVar   = taskGraphVar   . fromObjRef $ ctx
     let systemVar = systemGraphVar . fromObjRef $ ctx
-    let simVar    = simulationVar . fromObjRef $ ctx
+    let simVar    = simulationVar  . fromObjRef $ ctx
     _ <- tryTakeMVar taskVar
     _ <- tryTakeMVar systemVar
     _ <- tryTakeMVar simVar
@@ -91,15 +93,10 @@ doSimulate ctx taskStr systemStr = void . forkIO $ do
 
     case (tvr, svr) of
         (Right task, Right system) -> do
-            print task
-            _rg <- newStdGen
-            let config = SimulationConfig { linksCount = 2
-                                          , connectionType = FullDuplex
-                                          , queueGen = DiffQueue
-                                          , simulationType = WithPreTransfers}
+            let config     = fromJust . decode . BS.pack . T.unpack $ configStr
+            print config
             let simulation = simulate config system task
             putMVar simVar simulation
-            print simulation
         _ -> return ()
     fireSignal (Proxy :: Proxy SimulationFinished) ctx
 

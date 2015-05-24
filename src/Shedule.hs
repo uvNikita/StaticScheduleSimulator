@@ -78,7 +78,7 @@ type Ticks = Int
 type Task   = Directed   TaskWeight TransferWeight
 type System = Undirected NodeSpeed  ConnectionSpeed
 
-data QueueGen = DiffQueue | CritPathQueue | RandomQueue StdGen
+data QueueGen = DiffQueue | CritPathQueue | RandomQueue StdGen deriving (Show)
 instance FromJSON QueueGen where
     parseJSON (Object v) = do
         qtype <- v .: "type"
@@ -100,7 +100,7 @@ instance ToJSON Simulation where
 
 data SimulationConfig = SimulationConfig { connectionType :: ConnectionType
                                          , queueGen       :: QueueGen
-                                         , simulationType :: SimulationType }
+                                         , simulationType :: SimulationType } deriving (Show)
 
 instance FromJSON SimulationConfig where
     parseJSON (Object v) = do
@@ -112,15 +112,15 @@ instance FromJSON SimulationConfig where
     parseJSON _          = fail "node expected to be an object"
 
 
-data SimulationType = WithPreTransfers | WithoutPreTransfers
+data SimulationType = Simple | Optimized deriving (Show)
 
 instance FromJSON SimulationType where
-    parseJSON (String "pretransfers")    = return WithPreTransfers
-    parseJSON (String "no_pretransfers") = return WithoutPreTransfers
-    parseJSON _                          = fail "simulation can be 'pretransfers' or 'no_pretransfers'"
+    parseJSON (String "simple")    = return Simple
+    parseJSON (String "optimized") = return Optimized
+    parseJSON _                    = fail "simulation can be 'simple' or 'optimized'"
 
 
-data ConnectionType = FullDuplex | HalfDuplex
+data ConnectionType = FullDuplex | HalfDuplex deriving (Show)
 
 instance FromJSON ConnectionType where
     parseJSON (String "fullduplex") = return FullDuplex
@@ -297,8 +297,8 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
           doTransfer target (Transfer source weight path) = do
               SimulationState { currTime } <- get
               startTime <- case simulationType of
-                               WithoutPreTransfers -> return currTime
-                               WithPreTransfers    -> calcStartTime source
+                               Simple    -> return currTime
+                               Optimized -> calcStartTime source
               foldlM (doSend source target weight) startTime (zip path (tail path))
 
           assignCalculation node task time =

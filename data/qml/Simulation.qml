@@ -2,6 +2,7 @@ import QtQuick 2.0
 import QtWebKit 3.0
 import QtQuick.Layouts 1.0
 import Ubuntu.Components 1.1
+import Ubuntu.Components.Popups 0.1
 
 import "diagram.js" as Diagram
 
@@ -17,11 +18,19 @@ Page {
                 enabled: true
                 onTriggered: {
                     enabled = false;
-                    var system_graph = JSON.stringify(system.getGraph());
-                    var task_graph = JSON.stringify(task.getGraph());
-                    simulate(task_graph, system_graph);
+                    PopupUtils.open(simulationConfig.dialog);
                 }
             }
+        }
+    }
+
+    SimulationConfigDialog {
+        id: simulationConfig
+        callback: function (config) {
+            var system_graph = JSON.stringify(system.getGraph());
+            var task_graph = JSON.stringify(task.getGraph());
+            var config = JSON.stringify(config);
+            simulate(task_graph, system_graph, config);
         }
     }
 
@@ -69,18 +78,10 @@ Page {
                     }
                 }
             }
-            // Label {
-            //     Layout.fillWidth: true
-            //     Layout.preferredWidth: parent.width / 2
-            //     horizontalAlignment: Text.AlignHCenter
-            //     fontSize: "large"
-            //     text: "System: " + JSON.parse(systemValidationResult).errors
-            // }
         }
         Canvas {
             id: canvas
             Layout.fillHeight: true
-            // anchors.fill: parent
             Layout.fillWidth: true
             onPaint: {
                 Diagram.draw(canvas.getContext("2d"), JSON.parse(simulationResult));
