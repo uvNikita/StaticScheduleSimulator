@@ -4,7 +4,7 @@ import Ubuntu.Components 1.1
 MainView {
     useDeprecatedToolbar: false
     width: units.gu(128)
-    height: units.gu(80)
+    height: units.gu(85)
 
     Keys.onPressed: {
         if(event.modifiers && Qt.ControlModifier) {

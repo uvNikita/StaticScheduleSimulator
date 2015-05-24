@@ -1,13 +1,15 @@
 var size = 20;
-var indent_left = 20;
+var indent_left = 15;
 var indent_up = 1;
 
 function draw(ctx, data) {
     ctx.beginPath();
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.fill();
+
+    draw_grid();
+
     if (data !== null) {
-        draw_grid();
         var shift = 1;
         for (var node_id in data) {
             var node_flow = data[node_id];
@@ -82,18 +84,18 @@ function draw(ctx, data) {
 
     function draw_grid() {
         ctx.lineWidth = 0.2;
-        var num_cols = Math.floor((ctx.canvas.width - indent_left) / size);
-        var num_rows = Math.floor((ctx.canvas.height - indent_up) / size);
+        var num_cols = Math.floor((ctx.canvas.width - indent_left) / size) + 1;
+        var num_rows = Math.floor((ctx.canvas.height - indent_up) / size) + 1;
         for (var i = 0; i < num_cols; i++) {
             ctx.beginPath();
             ctx.moveTo(indent_left + i * size, indent_up);
-            ctx.lineTo(indent_left + i * size, ctx.canvas.height - indent_up);
+            ctx.lineTo(indent_left + i * size, (num_rows - 1) * size + indent_up);
             ctx.stroke();
         };
         for (var i = 0; i < num_rows; i++) {
             ctx.beginPath();
             ctx.moveTo(indent_left, indent_up + i * size);
-            ctx.lineTo(ctx.canvas.width - indent_left, indent_up + i * size);
+            ctx.lineTo((num_cols - 1) * size + indent_left, indent_up + i * size);
             ctx.stroke();
         };
     }
