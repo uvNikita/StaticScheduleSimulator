@@ -43,6 +43,8 @@ import           Data.Sequence                   (Seq)
 import qualified Data.Sequence                   as Seq
 import           Data.Set                        (member)
 import qualified Data.Set                        as S
+import qualified Data.Text                       as Text
+
 import           Prelude                         hiding (any, concatMap)
 
 
@@ -92,7 +94,8 @@ instance Show Simulation where
     show (Simulation sim) = intercalate "\n" (map show $ IntMap.toList sim)
 
 instance ToJSON Simulation where
-    toJSON (Simulation sim) = toJSON sim
+    toJSON (Simulation sim) = object $ map toPair (IntMap.toList sim)
+        where toPair (node, flow) = Text.pack (show node) .= flow
 
 data SimulationConfig = SimulationConfig { linksCount     :: Int
                                          , connectionType :: ConnectionType
