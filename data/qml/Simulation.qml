@@ -83,8 +83,6 @@ Page {
             // anchors.fill: parent
             Layout.fillWidth: true
             onPaint: {
-                console.log("DONE");
-                console.log(simulationResult);
                 Diagram.draw(canvas.getContext("2d"), JSON.parse(simulationResult));
             }
         }

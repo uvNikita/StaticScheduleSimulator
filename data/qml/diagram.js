@@ -64,16 +64,13 @@ function draw(ctx, data) {
         ctx.textBaseline = "bottom";
         var text = task["val"];
         var text_width = ctx.measureText(text).width;
-        // console.log(text_width);
         var text_x = start_x + width / 2 - text_width / 2;
         var text_y = start_y + height;
         ctx.fillText(text, text_x, text_y); 
-        // console.log("x: ", text_x, "y: ", text_y, "text: ", text);
         ctx.stroke();
     }
 
     function draw_flow(flow, row) {
-        // console.log("asdas ", flow, row);
         for (var i = flow.length - 1; i >= 0; i--) {
             var task = flow[i];
             var start_x = indent_left + size * task["from"];
