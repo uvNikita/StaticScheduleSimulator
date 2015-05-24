@@ -72,7 +72,7 @@ Item {
                                 "queue": queue,
                                 "connection": connection
                             }
-                            callback(config);
+                            success_callback(config);
                             PopupUtils.close(simulationDialog);
                         }
                     }
