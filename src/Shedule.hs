@@ -98,14 +98,12 @@ instance ToJSON Simulation where
     toJSON (Simulation sim) = object $ map toPair (IntMap.toList sim)
         where toPair (node, flow) = Text.pack (show node) .= flow
 
-data SimulationConfig = SimulationConfig { linksCount     :: Int
-                                         , connectionType :: ConnectionType
+data SimulationConfig = SimulationConfig { connectionType :: ConnectionType
                                          , queueGen       :: QueueGen
                                          , simulationType :: SimulationType }
 
 instance FromJSON SimulationConfig where
     parseJSON (Object v) = do
-        linksCount     <- v .: "links"
         connectionType <- v .: "connection"
         queueGen       <- v .: "queue"
         simulationType <- v .: "simulation"
@@ -190,8 +188,9 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
                                       , currTaskQueue  = tq
                                       , currSimulation = initSimulation
                                       , taskNode       = Map.empty }
-          initSimulation = IntMap.fromList $ map (\ n -> (n, emptyNodeFlow)) (nodes systemGraph)
-          emptyNodeFlow = NodeFlow emptyFlow (Seq.replicate linksCount emptyFlow)
+          initSimulation = IntMap.fromList $ map (\ n -> (n, emptyNodeFlow n)) (nodes systemGraph)
+          emptyNodeFlow node = NodeFlow emptyFlow (Seq.replicate lc emptyFlow)
+              where lc = fromJust $ lab systemGraph node
           emptyFlow = IMap.empty
 
           isFinished = null . unTaskQueue . currTaskQueue <$> get
