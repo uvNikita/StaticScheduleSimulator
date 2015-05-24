@@ -173,11 +173,9 @@ main = do
     taskGraphVar   <- newEmptyMVar
     systemGraphVar <- newEmptyMVar
     simulationVar  <- newEmptyMVar
-    ctx <- newObjectDC $ ContextObj {..}
+    ctx <- newObjectDC ContextObj {..}
 
     qml <- getDataFileName "qml/Window.qml"
-    runEngineLoop defaultEngineConfig {
-        initialDocument = fileDocument qml
-    ,   contextObject = Just $ anyObjRef ctx
-    }
+    runEngineLoop defaultEngineConfig { initialDocument = fileDocument qml
+                                      , contextObject   = Just $ anyObjRef ctx }
 

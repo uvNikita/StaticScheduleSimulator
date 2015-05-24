@@ -161,7 +161,7 @@ function draw_nodes(t) {
 
 function draw(t) {
     context.beginPath();
-    context.clearRect(0, 0, width, height);
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
     context.fill();
 
     draw_edges(t);

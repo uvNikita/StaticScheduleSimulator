@@ -3,6 +3,8 @@ import QtWebKit 3.0
 import QtQuick.Layouts 1.0
 import Ubuntu.Components 1.1
 
+import "diagram.js" as Diagram
+
 Page {
     property var system;
     property var task;
@@ -25,9 +27,8 @@ Page {
 
     Component.onCompleted: {
         onModelationFinished.connect(function() {
-            console.log("DONE");
-            console.log(simulationResult);
             modelateAction.enabled = true;
+            canvas.requestPaint();
         });
     }
 
@@ -77,8 +78,15 @@ Page {
             // }
         }
         Canvas {
+            id: canvas
             Layout.fillHeight: true
+            // anchors.fill: parent
             Layout.fillWidth: true
+            onPaint: {
+                console.log("DONE");
+                console.log(simulationResult);
+                Diagram.draw(canvas.getContext("2d"), JSON.parse(simulationResult));
+            }
         }
     }
 }

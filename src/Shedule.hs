@@ -151,7 +151,7 @@ instance (Interval k e, ToJSON e, ToJSON k, ToJSON a) => ToJSON (IntervalMap k a
 data CPUFlowInfo  = CPUFlowInfo  { cpuTaskId :: TaskID } deriving (Show, Eq)
 
 instance ToJSON CPUFlowInfo where
-    toJSON (CPUFlowInfo task) = toJSON task
+    toJSON (CPUFlowInfo task) = toJSON (show task)
 
 
 data LinkFlowInfo = LinkFlowInfo { linkFromId :: TaskID
