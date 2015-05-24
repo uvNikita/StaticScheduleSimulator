@@ -6,22 +6,6 @@ function draw(ctx, data) {
     ctx.beginPath();
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.fill();
-    // var data = {
-    //     "1": {"links":[[],[],[],[]],"cpu":[{"to":1,"from":0,"val":1}, {"from":2,"to":3,"val":1}]},
-    //     "2": {"links":[[],[],[],[]],"cpu":[]},
-    //     "3": {"links":[[],[],[],[]],"cpu":[{"to":4,"from":8,"val":1}]},
-    // }
-    var data = {
-        "1": {"links":[[],[],[],[]],"cpu":[]},
-        "2": {
-            "links":[[],[],[],[]],
-            "cpu":[{"to":5,"from":0,"val":"2"},{"to":6,"from":5,"val":"4"},{"to":7,"from":6,"val":"7"}]
-        },
-        "3": {
-            "links":[[{"to":4,"from":3,"val":"1-\u003e7(2)"}],[],[],[]],
-            "cpu":[{"to":3,"from":0,"val":"1"},{"to":7,"from":3,"val":"3"}]
-        }
-    }
     if (data !== null) {
         draw_grid();
         var shift = 1;

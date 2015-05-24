@@ -93,7 +93,7 @@ modelate ctx taskStr systemStr = void . forkIO $ do
         (Right task, Right system) -> do
             print task
             _rg <- newStdGen
-            let config = SimulationConfig { linksCount = 4
+            let config = SimulationConfig { linksCount = 2
                                           , connectionType = FullDuplex
                                           , queueGen = DiffQueue
                                           , simulationType = WithPreTransfers}

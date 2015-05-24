@@ -60,6 +60,7 @@ import           Control.Monad.State.Strict      (State, execState, get, modify)
 
 import           Graph                           (Directed, Undirected)
 
+
 newtype TaskQueue = TaskQueue { unTaskQueue :: [Node] } deriving (Eq, Show)
 newtype NodeQueue = NodeQueue { unNodeQueue :: Seq Node } deriving (Eq, Show)
 
@@ -253,7 +254,7 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
               let transfer (pid, weight) = Transfer pid
                                                     weight
                                                     (esp (findNode pid) node systemGraph)
-              return $ map transfer parents
+              return . map transfer . filter (\ (pid, _) -> findNode pid /= node) $ parents
 
           send node link time info =
               modify $ \ st @ (SimulationState { currSimulation }) ->
@@ -317,7 +318,8 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
                       SimulationState { currTime } <- get
                       transfers <- getTransfers task node
                       times     <- mapM (doTransfer task) transfers
-                      let time = if null transfers then currTime else maximum times
+                      let time = if null transfers then currTime else max (maximum times) currTime
+                      -- traceShow (show currTime ++ ": " ++ " assign: " ++ show task ++ " on: " ++ show node ++ " at: " ++ show time) get
                       assignCalculation node task time
                       rmTask task
 
