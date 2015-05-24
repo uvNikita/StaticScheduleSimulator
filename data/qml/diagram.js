@@ -25,7 +25,7 @@ function draw(ctx, data) {
         ctx.beginPath();
         ctx.font="20px Ubuntu";
         ctx.textBaseline = "middle";
-        var node_id_x = indent_left - 10;
+        var node_id_x = indent_left - 12;
         var node_id_y = shift + height / 2;
         ctx.fillText(node_id, node_id_x, node_id_y);
         ctx.stroke();
@@ -44,7 +44,7 @@ function draw(ctx, data) {
         ctx.beginPath();
         ctx.lineWidth = 1;
         ctx.moveTo(indent_left, new_shift);
-        ctx.lineTo(ctx.canvas.width - indent_left, new_shift);
+        ctx.lineTo(Math.floor((ctx.canvas.width) / size - 1) * size + indent_left, new_shift);
         ctx.stroke();
 
         return new_shift;
