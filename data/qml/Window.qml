@@ -4,7 +4,7 @@ import Ubuntu.Components 1.1
 MainView {
     useDeprecatedToolbar: false
     width: units.gu(128)
-    height: units.gu(85)
+    height: units.gu(84)
 
     Keys.onPressed: {
         if(event.modifiers && Qt.ControlModifier) {
@@ -29,8 +29,8 @@ MainView {
             page: Graph { id: system; directed: false }
         }
         Tab {
-            title: "Modeling"
-            page: Modeling { task: task; system: system}
+            title: "Simulation"
+            page: Simulation { task: task; system: system}
         }
     }
 }

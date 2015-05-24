@@ -12,22 +12,22 @@ Page {
     tools: ToolbarItems {
         ToolbarButton {
             action: Action {
-                id: modelateAction
+                id: simulateAction
                 iconName: "media-playback-start"
                 enabled: true
                 onTriggered: {
                     enabled = false;
                     var system_graph = JSON.stringify(system.getGraph());
                     var task_graph = JSON.stringify(task.getGraph());
-                    modelate(task_graph, system_graph);
+                    simulate(task_graph, system_graph);
                 }
             }
         }
     }
 
     Component.onCompleted: {
-        onModelationFinished.connect(function() {
-            modelateAction.enabled = true;
+        onSimulationFinished.connect(function() {
+            simulateAction.enabled = true;
             canvas.requestPaint();
         });
     }

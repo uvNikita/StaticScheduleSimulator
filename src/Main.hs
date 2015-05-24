@@ -50,9 +50,9 @@ data SystemValidationDone deriving Typeable
 instance SignalKeyClass SystemValidationDone where
     type SignalParams SystemValidationDone = IO ()
 
-data ModelationFinished deriving Typeable
-instance SignalKeyClass ModelationFinished where
-    type SignalParams ModelationFinished = IO ()
+data SimulationFinished deriving Typeable
+instance SignalKeyClass SimulationFinished where
+    type SignalParams SimulationFinished = IO ()
 
 instance DefaultClass ContextObj where
     classMembers = [
@@ -63,19 +63,19 @@ instance DefaultClass ContextObj where
                            (Proxy :: Proxy SystemValidationDone)
                            (getValidationResult systemGraphVar)
         , defPropertySigRO "simulationResult"
-                           (Proxy :: Proxy ModelationFinished)
+                           (Proxy :: Proxy SimulationFinished)
                            getSimulationResult
 
-        , defMethod "modelate"          modelate
+        , defMethod "simulate"          doSimulate
         , defMethod "saveGraphToFile"   saveGraphToFile
         , defMethod "loadGraphFromFile" loadGraphFromFile
         , defMethod "generateTask"      generateTask
 
-        , defSignal "modelationFinished" (Proxy :: Proxy ModelationFinished)
+        , defSignal "simulationFinished" (Proxy :: Proxy SimulationFinished)
         ]
 
-modelate :: ObjRef ContextObj -> Text -> Text -> IO ()
-modelate ctx taskStr systemStr = void . forkIO $ do
+doSimulate :: ObjRef ContextObj -> Text -> Text -> IO ()
+doSimulate ctx taskStr systemStr = void . forkIO $ do
     let taskVar   = taskGraphVar   . fromObjRef $ ctx
     let systemVar = systemGraphVar . fromObjRef $ ctx
     let simVar    = simulationVar . fromObjRef $ ctx
@@ -101,7 +101,7 @@ modelate ctx taskStr systemStr = void . forkIO $ do
             putMVar simVar simulation
             print simulation
         _ -> return ()
-    fireSignal (Proxy :: Proxy ModelationFinished) ctx
+    fireSignal (Proxy :: Proxy SimulationFinished) ctx
 
 
 getSimulationResult :: ObjRef ContextObj -> IO Text
