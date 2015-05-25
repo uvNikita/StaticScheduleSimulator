@@ -2,8 +2,7 @@ import QtQuick 2.0
 import QtQuick.Controls 1.1
 import Ubuntu.Components 1.1
 
-// ApplicationWindow {
-Item {
+ApplicationWindow {
     visible: true
     width: units.gu(128)
     height: units.gu(84)

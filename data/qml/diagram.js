@@ -7,9 +7,8 @@ function draw(ctx, data) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.fill();
 
-    draw_grid();
-
     if (data !== null) {
+        draw_grid();
         var shift = 1;
         for (var node_id in data) {
             var node_flow = data[node_id];
