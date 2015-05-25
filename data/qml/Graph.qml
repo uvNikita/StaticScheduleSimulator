@@ -22,6 +22,15 @@ Page {
         }
         ToolbarButton {
             action: Action {
+                iconName: "clear"
+                onTriggered: {
+                    Graph.clear_graph();
+                    canvas.requestPaint();
+                }
+            }
+        }
+        ToolbarButton {
+            action: Action {
                 iconName: "view-fullscreen"
                 onTriggered: {
                     saveDialog.open();

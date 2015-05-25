@@ -16,6 +16,15 @@ function init(context_, directed_) {
     context = context_;
 }
 
+function clear_graph() {
+    nodes = {};
+    edges = {};
+    selectedNode = undefined;
+    selectedEdge = undefined;
+    last = undefined;
+    _cid = 0;
+}
+
 function getGraph() {
     var nodes_ls = [];
     var edges_ls = [];
