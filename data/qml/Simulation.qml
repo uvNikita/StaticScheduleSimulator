@@ -10,9 +10,8 @@ Page {
     property var system;
     property var task;
 
-    tools: ToolbarItems {
-        ToolbarButton {
-            action: Action {
+    head.actions: [
+            Action {
                 id: simulateAction
                 iconName: "media-playback-start"
                 enabled: true
@@ -21,8 +20,7 @@ Page {
                     PopupUtils.open(simulationConfig.dialog);
                 }
             }
-        }
-    }
+        ]
 
     SimulationConfigDialog {
         id: simulationConfig

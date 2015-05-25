@@ -11,41 +11,33 @@ Page {
     property bool directed: false;
     function getGraph() { return Graph.getGraph() }
 
-    tools: ToolbarItems {
-        ToolbarButton {
-            action: Action {
-                iconName: "edit"
-                onTriggered: {
-                    PopupUtils.open(generateDialog.dialog);
-                }
+    head.actions: [
+        Action {
+            iconName: "clear"
+            onTriggered: {
+                Graph.clear_graph();
+                canvas.requestPaint();
+            }
+        },
+        Action {
+            iconName: "edit"
+            onTriggered: {
+                PopupUtils.open(generateDialog.dialog);
+            }
+        },
+        Action {
+            iconName: "view-fullscreen"
+            onTriggered: {
+                saveDialog.open();
+            }
+        },
+        Action {
+            iconName: "view-restore"
+            onTriggered: {
+                loadDialog.open();
             }
         }
-        ToolbarButton {
-            action: Action {
-                iconName: "clear"
-                onTriggered: {
-                    Graph.clear_graph();
-                    canvas.requestPaint();
-                }
-            }
-        }
-        ToolbarButton {
-            action: Action {
-                iconName: "view-fullscreen"
-                onTriggered: {
-                    saveDialog.open();
-                }
-            }
-        }
-        ToolbarButton {
-            action: Action {
-                iconName: "view-restore"
-                onTriggered: {
-                    loadDialog.open();
-                }
-            }
-        }
-    }
+    ]
 
     GraphGenerationDialog {
         id: generateDialog
