@@ -26,7 +26,7 @@ import           Data.Function                   (on)
 import           Data.Graph.Analysis             (pathTree)
 import           Data.Graph.Inductive            (DynGraph, Graph, Node, esp,
                                                   grev, lab, lpre, match,
-                                                  neighbors, nodes, pre)
+                                                  neighbors, nodes, pre, suc)
 import           Data.IntervalMap.Generic.Strict (Interval, IntervalMap,
                                                   intersecting, lowerBound,
                                                   rightClosed, upperBound,
@@ -190,7 +190,9 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
                                       , taskNode       = Map.empty }
           initSimulation = IntMap.fromList $ map (\ n -> (n, emptyNodeFlow n)) (nodes systemGraph)
           emptyNodeFlow node = NodeFlow emptyFlow (Seq.replicate lc emptyFlow)
-              where lc = fromJust $ lab systemGraph node
+              where lc = min linksFromSystem linksFromTopology
+                    linksFromSystem   = fromJust $ lab systemGraph node
+                    linksFromTopology = length   $ suc systemGraph node
           emptyFlow = IMap.empty
 
           isFinished = null . unTaskQueue . currTaskQueue <$> get
@@ -267,8 +269,8 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
             let NodeFlow _ linkFlowsFrom = currSimulation IntMap.! from
             let NodeFlow _ linkFlowsTo   = currSimulation IntMap.! to
             let findLinks start = if checkChannel
-                    then (start,,) <$> Seq.findIndexL isFreeLink linkFlowsFrom
-                                   <*> Seq.findIndexL isFreeLink linkFlowsTo
+                    then (start,,) <$> Seq.findIndexL isFreeLinkFrom linkFlowsFrom
+                                   <*> Seq.findIndexL isFreeLinkTo   linkFlowsTo
                     else Nothing
                     where checkChannel = case connectionType of
                                              HalfDuplex -> checkFrom && checkTo
@@ -279,7 +281,15 @@ simulate (SimulationConfig {..}) systemGraph taskGraph = Simulation . currSimula
                           isSending toNode = any (isLinkTo toNode)
                                            . map snd
                                            . concatMap (`IMap.intersecting` (start, end))
-                          isFreeLink flow = null $ IMap.intersecting flow (start, end)
+                          isFreeLinkFrom flowFrom = null $ IMap.intersecting flowFrom (start, end)
+                          isFreeLinkTo   toFlow   =
+                              case IMap.intersecting toFlow (start, end) of
+                                  [] -> True
+                                  [(_, LinkFlowInfo { linkNodeId })] ->
+                                      case connectionType of
+                                          HalfDuplex -> False
+                                          FullDuplex -> linkNodeId == from
+                                  _ -> False
 
             let (st, lf, _) = head . catMaybes $ map findLinks [lowerTime..] -- ignoring link to. Maybe wrong
             send from lf (st, st + weight) $ LinkFlowInfo source target to
