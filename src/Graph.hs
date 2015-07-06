@@ -29,6 +29,7 @@ import           Data.Maybe            (fromJust, mapMaybe)
 import           Data.Text             (Text)
 import qualified Data.Text             as T
 
+import           Control.Applicative   ((<$>), (<*>))
 import           Control.Arrow         ((&&&))
 import           System.Random         (Random, RandomGen, randomRs)
 import qualified System.Random         as R
@@ -69,7 +70,6 @@ pass :: DynGraph gr => Validator -> gr a b -> Bool
 pass DAG = null . cyclesIn'
 pass Connected = isConnected
 pass NonEmpty  = not . isEmpty
-
 
 generate
     :: ( Integral a , Integral b, Random a , Random b
@@ -122,13 +122,11 @@ eitherDecode s = case A.eitherDecode s of
                      Right v -> Right v
 
 instance FromJSON Node where
-    parseJSON (Object v) = do
-        idx    <- v .: "idx"
-        weight <- v .: "weight"
-        x      <- v .: "x"
-        y      <- v .: "y"
-
-        return $ Node idx weight x y
+    parseJSON (Object v) = Node
+                       <$> v .: "idx"
+                       <*> v .: "weight"
+                       <*> v .: "x"
+                       <*> v .: "y"
     parseJSON _          = fail "node expected to be an object"
 
 instance ToJSON Node where
@@ -138,13 +136,11 @@ instance ToJSON Node where
                               , "y"      .= nodeY]
 
 instance FromJSON Edge where
-    parseJSON (Object v) = do
-        idx     <- v .: "idx"
-        from    <- v .: "from"
-        to      <- v .: "to"
-        weight  <- v .: "weight"
-
-        return $ Edge idx from to weight
+    parseJSON (Object v) = Edge
+                       <$> v .: "idx"
+                       <*> v .: "from"
+                       <*> v .: "to"
+                       <*> v .: "weight"
     parseJSON _          = fail "edge expected to be an object"
 
 instance ToJSON Edge where

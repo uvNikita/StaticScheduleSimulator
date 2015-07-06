@@ -174,4 +174,3 @@ main = do
     qml <- getDataFileName "qml/Window.qml"
     runEngineLoop defaultEngineConfig { initialDocument = fileDocument qml
                                       , contextObject   = Just $ anyObjRef ctx }
-
